@@ -1,0 +1,102 @@
+# Pipeline Templates — 에이전트 체이닝 사전 정의
+# 각 파이프라인은 순차적으로 실행되며, 이전 step의 output이 다음 step의 context에 자동 주입됩니다.
+
+pipelines:
+  literature_to_writing:
+    name: "문헌분석 → 논문작성"
+    description: "논문 수집·분석 후 해당 내용으로 논문 섹션 작성"
+    trigger_patterns:
+      - "논문.*분석.*작성"
+      - "문헌.*조사.*초안"
+      - "리뷰.*논문.*쓰"
+    steps:
+      - agent: literature
+        task_template: "다음 주제에 대한 문헌 조사를 수행하세요: {topic}"
+        output_key: literature_review
+        checkpoint: false
+
+      - agent: writing
+        task_template: |
+          다음 문헌 조사 결과를 바탕으로 {section} 섹션을 작성하세요:
+          
+          ## 문헌 조사 결과
+          {literature_review}
+        output_key: draft
+        checkpoint: true
+        checkpoint_message: "문헌 조사가 완료되었습니다. 이 결과로 논문을 작성할까요?"
+
+  full_paper_pipeline:
+    name: "논문 풀 파이프라인"
+    description: "문헌조사 → 논문작성 → 발표자료까지 원스톱"
+    trigger_patterns:
+      - "논문.*발표.*까지"
+      - "처음부터.*발표"
+      - "풀.*파이프라인"
+    steps:
+      - agent: literature
+        task_template: "다음 주제의 문헌 조사: {topic}"
+        output_key: literature_review
+        checkpoint: false
+
+      - agent: writing
+        task_template: |
+          다음 문헌 조사 결과를 바탕으로 논문 초안을 작성하세요:
+          {literature_review}
+        output_key: draft
+        checkpoint: true
+        checkpoint_message: "논문 초안이 완성되었습니다. 발표 자료를 만들까요?"
+
+      - agent: presentation
+        task_template: |
+          다음 논문 초안을 기반으로 발표 슬라이드를 구성하세요:
+          {draft}
+        output_key: slides
+        checkpoint: false
+
+  review_response:
+    name: "리뷰 응답 파이프라인"
+    description: "리뷰어 코멘트 대응: 추가 문헌 조사 → 응답서 작성"
+    trigger_patterns:
+      - "리뷰.*응답"
+      - "리뷰어.*코멘트"
+      - "rebuttal"
+      - "reviewer.*response"
+    steps:
+      - agent: literature
+        task_template: |
+          리뷰어 지적사항 관련 추가 문헌 조사를 수행하세요:
+          {reviewer_comments}
+        output_key: additional_refs
+        checkpoint: false
+
+      - agent: writing
+        task_template: |
+          다음 추가 문헌과 리뷰어 코멘트를 바탕으로 리뷰 응답서를 작성하세요:
+          
+          ## 리뷰어 코멘트
+          {reviewer_comments}
+          
+          ## 추가 문헌 조사
+          {additional_refs}
+        output_key: response_letter
+        checkpoint: false
+
+  teaching_package:
+    name: "교육 패키지"
+    description: "문헌조사 → 강의자료 → 퀴즈 일괄 생성"
+    trigger_patterns:
+      - "수업.*자료.*퀴즈"
+      - "강의.*패키지"
+      - "교안.*문제"
+    steps:
+      - agent: literature
+        task_template: "다음 주제의 교육용 핵심 내용 정리: {topic}"
+        output_key: topic_summary
+        checkpoint: false
+
+      - agent: teaching
+        task_template: |
+          다음 내용을 바탕으로 강의 노트와 퀴즈를 생성하세요:
+          {topic_summary}
+        output_key: teaching_materials
+        checkpoint: false

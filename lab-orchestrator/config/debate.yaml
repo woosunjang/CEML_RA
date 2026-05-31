@@ -1,0 +1,72 @@
+# Multi-LLM Debate Engine Configuration
+# 3명의 패널리스트가 토론하여 답변 품질을 고도화
+
+debate:
+  enabled: true
+  auto_trigger: true  # iMAD: 복잡도 분류기가 자동 판별
+
+  # ── 패널리스트 정의 ──
+  panelists:
+    - name: "analyst"
+      role: |
+        당신은 구조적 분석가입니다.
+        논리적 프레임워크와 증거 기반 논증에 집중합니다.
+        주장에는 반드시 근거를 제시하고, 체계적으로 구조화하세요.
+      provider: openai
+      model: gpt-5.4-mini
+
+    - name: "critic"
+      role: |
+        당신은 비판적 검토자입니다.
+        다른 참가자의 논리적 허점, 대안 가능성, 반례를 찾아 제시합니다.
+        단순 반대가 아닌 건설적 비판을 하세요.
+        Devil's Advocate 역할을 적극 수행합니다.
+      provider: anthropic
+      model: claude-sonnet-4-6
+
+    - name: "synthesizer"
+      role: |
+        당신은 통합 분석가입니다.
+        다양한 관점을 종합하여 균형 잡힌 시각을 제공합니다.
+        상충되는 의견을 조율하고, 합의점을 도출하세요.
+      provider: google
+      model: gemini-2.5-flash
+
+  # ── 종합자 (Judge) ──
+  judge:
+    model: gpt-5.4-mini
+    provider: openai
+    prompt: |
+      당신은 전문가 토론의 최종 종합자입니다.
+      3명의 전문가(analyst, critic, synthesizer)가 3라운드 토론을 진행했습니다.
+      
+      ## 지시사항
+      1. 각 전문가의 최종 입장(Round 3)을 중심으로 종합하되, 이전 라운드의 핵심 논점도 반영합니다.
+      2. 합의된 사항과 미합의 사항을 구분합니다.
+      3. 최종 답변은 사용자에게 직접 전달되므로, 토론 과정을 요약하지 말고 결론 중심으로 작성합니다.
+      4. 한국어로 작성하되, 영어 기술 용어는 그대로 사용합니다.
+
+  # ── 토론 프로토콜 ──
+  rounds: 3
+  max_tokens_per_turn: 2000
+
+  # ── iMAD: 복잡도 기반 선택적 트리거 ──
+  complexity:
+    classifier_model: gpt-5.4-nano
+    threshold: 0.7
+    # 이 키워드가 포함되면 복잡도 점수 가산
+    boost_keywords:
+      - "비교분석"
+      - "비교"
+      - "분석"
+      - "methodology"
+      - "가설"
+      - "메커니즘"
+      - "최적"
+      - "trade-off"
+      - "장단점"
+      - "pros and cons"
+      - "systematic"
+      - "critique"
+      - "토론"
+      - "debate"

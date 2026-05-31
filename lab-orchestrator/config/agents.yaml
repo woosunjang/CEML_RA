@@ -1,0 +1,57 @@
+agents:
+  literature:
+    name: "Literature Agent"
+    description: "논문 수집·분석·문헌 리뷰"
+    icon: "📚"
+    capabilities:
+      - paper_analysis
+      - literature_review
+      - citation_search
+    model: gpt-5.4-mini
+    model_heavy: gpt-5.4
+
+  teaching:
+    name: "Teaching Agent"
+    description: "강의 설계·노트북·퀴즈"
+    icon: "🎓"
+    capabilities:
+      - lecture_design
+      - quiz_generation
+      - notebook_creation
+    model: gpt-5.4-mini
+    model_heavy: gpt-5.4-mini
+
+  writing:
+    name: "Writing Agent"
+    description: "논문·제안서·리뷰 응답"
+    icon: "✍️"
+    capabilities:
+      - proposal_writing
+      - manuscript_review
+      - abstract_generation
+      - review_response
+    model: claude-sonnet-4-6
+    model_heavy: claude-sonnet-4-6
+
+  presentation:
+    name: "Presentation Agent"
+    description: "PPT·포스터·다이어그램"
+    icon: "📽️"
+    capabilities:
+      - slide_generation
+      - poster_layout
+      - diagram_creation
+    model: gpt-5.4-mini
+    model_heavy: gpt-5.4-mini
+
+  project:
+    name: "Project Agent"
+    description: "과제 추적·일정·리포트·회의록"
+    icon: "📋"
+    capabilities:
+      - project_tracking
+      - deadline_management
+      - report_generation
+      - meeting_notes
+    model: gpt-5.4-nano
+    model_heavy: gpt-5.4-mini

@@ -1,0 +1,46 @@
+# Model Profiles — 가성비(cost) vs 성능(performance) 전환
+# API: POST /model-profile {"profile": "performance"}
+#       POST /model-profile {"profile": "cost", "agent": "literature"}
+
+profiles:
+  performance:
+    description: "최고 품질. 연구 발표·논문 최종본·중요 산출물용."
+    planner:
+      model: gpt-5.4-mini
+    literature:
+      model: gpt-5.4-mini
+      model_heavy: gpt-5.4
+    teaching:
+      model: gpt-5.4-mini
+      model_heavy: gpt-5.4-mini
+    writing:
+      model: claude-sonnet-4-6
+      model_heavy: claude-sonnet-4-6
+    presentation:
+      model: gpt-5.4-mini
+      model_heavy: gpt-5.4-mini
+    project:
+      model: gpt-5.4-nano
+      model_heavy: gpt-5.4-mini
+
+  cost:
+    description: "비용 최소화. 일상 업무·브레인스토밍·초안용."
+    planner:
+      model: gpt-4.1-nano
+    literature:
+      model: gpt-4.1-mini
+      model_heavy: gpt-4.1
+    teaching:
+      model: gpt-4.1-nano
+      model_heavy: gpt-4.1-mini
+    writing:
+      model: gpt-4.1-mini
+      model_heavy: claude-sonnet-4-6
+    presentation:
+      model: gpt-4.1-nano
+      model_heavy: gpt-4.1-mini
+    project:
+      model: gemini-2.5-flash
+      model_heavy: gpt-4.1-mini
+
+default_profile: performance

@@ -1,0 +1,18 @@
+# Lab Research Agents — Manual Test Questions
+# Use these to validate each agent mode after ingesting test documents.
+
+literature:
+  - "이 문서들을 바탕으로 이 주제의 연구 gap을 정리해줘."
+  - "LLZO 관련 문헌들을 방법론, 물성, 한계, 제안서에 활용 가능한 논리로 비교해줘."
+
+proposal:
+  - "기존 제안서 문체를 참고해서 연구개발 필요성을 0.5페이지 분량으로 써줘."
+  - "AI 기반 소재 탐색 연구내용을 문제 정의, 병목, 방법론, 기대성과 중심으로 정리해줘."
+
+manuscript:
+  - "이 manuscript의 novelty claim과 evidence alignment를 비판적으로 검토해줘."
+  - "Reviewer가 지적할 가능성이 높은 major concern을 찾아줘."
+
+lecture:
+  - "이 내용을 대학원 강의 10장 슬라이드 outline으로 바꿔줘."
+  - "SISSO와 symbolic regression을 대학원생 대상 90분 강의로 구성해줘."

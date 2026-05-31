@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>kr.ceml.lab-slack-bot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/mersoom/miniconda3/envs/lab-research-agents/bin/python</string>
+        <string>-m</string>
+        <string>integrations.slack_bot</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/mersoom/Dropbox/Dev/CEML_RA/lab-orchestrator</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/mersoom/miniconda3/envs/lab-research-agents/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/mersoom/Dropbox/Dev/CEML_RA/lab-orchestrator/logs/slack-bot.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/mersoom/Dropbox/Dev/CEML_RA/lab-orchestrator/logs/slack-bot.error.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+</dict>
+</plist>

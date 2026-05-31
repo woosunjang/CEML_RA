@@ -1,0 +1,86 @@
+# 실제 사용 중인 모든 모델 레지스트리
+models:
+  # ── OpenAI ──
+  gpt-5.4:
+    provider: openai
+    model_name: gpt-5.4
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: OPENAI_API_KEY
+
+  gpt-5.4-mini:
+    provider: openai
+    model_name: gpt-5.4-mini
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: OPENAI_API_KEY
+
+  gpt-5.4-nano:
+    provider: openai
+    model_name: gpt-5.4-nano
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: OPENAI_API_KEY
+
+  gpt-4.1:
+    provider: openai
+    model_name: gpt-4.1
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: OPENAI_API_KEY
+
+  gpt-4.1-mini:
+    provider: openai
+    model_name: gpt-4.1-mini
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: OPENAI_API_KEY
+
+  gpt-4.1-nano:
+    provider: openai
+    model_name: gpt-4.1-nano
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: OPENAI_API_KEY
+
+  # ── Anthropic ──
+  claude-sonnet-4-6:
+    provider: anthropic
+    model_name: claude-sonnet-4-6
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: ANTHROPIC_API_KEY
+
+  # ── Google ──
+  gemini-2.5-flash:
+    provider: google
+    model_name: gemini-2.5-flash
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: GOOGLE_API_KEY
+
+  gemini-2.0-flash:
+    provider: google
+    model_name: gemini-2.0-flash
+    temperature: 0.3
+    max_tokens: 4096
+    api_key_env: GOOGLE_API_KEY
+
+default_model: gpt-5.4-mini
+embedding_model: text-embedding-3-small
+
+# Image generation models
+image_models:
+  google:
+    default: gemini-3-pro-image-preview
+    available:
+      - gemini-3-pro-image-preview
+      - gemini-2.5-flash-image
+      - imagen-4-fast
+      - imagen-4
+  openai:
+    default: gpt-image-2
+    available:
+      - gpt-image-1-mini
+      - gpt-image-2
+default_image_provider: google

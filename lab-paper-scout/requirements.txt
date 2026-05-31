@@ -1,0 +1,9 @@
+arxiv>=2.1
+pymupdf>=1.24
+google-genai>=1.0
+apscheduler>=3.10
+pyyaml>=6.0
+requests>=2.31
+slack-sdk>=3.27
+openai>=1.30
+qdrant-client>=1.9

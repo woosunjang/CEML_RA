@@ -1,0 +1,51 @@
+.DS_Store
+.env
+*.pid
+*.py[cod]
+__pycache__/
+**/__pycache__/
+
+# Python / test caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Frontend build/dependencies
+lab-orchestrator/ui/node_modules/
+lab-orchestrator/ui/.next/
+lab-orchestrator/ui/out/
+
+# Local service env/log/runtime files
+lab-orchestrator/.env
+lab-orchestrator/.orchestrator.pid
+lab-orchestrator/logs/
+lab-paper-scout/logs/
+logs/
+
+# Generated artifacts and mutable local data
+generated/
+data/sessions/
+data/*.db
+data/*.db-*
+data/autonomy_actions.jsonl
+data/knowledge_briefs/
+data/scout_graph_promotion_state.json
+data/scout_sync_state.json
+lab-orchestrator/data/*.db
+lab-orchestrator/data/*.db-*
+lab-paper-scout/data/*.db
+lab-paper-scout/data/*.db-*
+lab-paper-scout/data/archive/
+lab-paper-scout/data/backups/
+lab-paper-scout/data/processed/
+lab-paper-scout/data/reports/
+lab-paper-scout/data/backfill_state.json
+lab-research-agents/qdrant_storage/
+
+# Local command queues
+lab-orchestrator/commands/archival_queue/*.json
+lab-orchestrator/commands/archival_queue/failed/
+lab-orchestrator/commands/outbox/
+lab-orchestrator/commands/archive/

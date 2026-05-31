@@ -1,0 +1,19 @@
+workspaces:
+  ontology:
+    name: "Ontology-based Materials Design"
+    description: "온톨로지 기반 재료 설계 자동화 연구"
+    qdrant_filter:
+      project: "ontology"
+    default_model: gpt-4o
+    context: |
+      본 프로젝트는 재료과학 분야의 온톨로지를 구축하고,
+      이를 활용한 재료 설계 자동화를 목표로 합니다.
+      EMMO (European Materials Modelling Ontology) 기반의
+      도메인 특화 온톨로지 개발이 핵심입니다.
+
+  default:
+    name: "일반"
+    description: "기본 워크스페이스 — 전체 문서 검색"
+    qdrant_filter: {}
+    default_model: gpt-4o
+    context: ""

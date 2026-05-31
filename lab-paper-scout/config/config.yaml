@@ -1,0 +1,127 @@
+# ============================================================
+# lab-paper-scout 설정 파일
+# ============================================================
+
+# 관심 토픽 설정 (priority: 1이 최우선, 숫자가 높을수록 낮은 우선순위)
+topics:
+  - name: "materials_ontology_kg"
+    display_name: "Materials Ontology & Knowledge Graphs"
+    priority: 1
+    keywords:
+      - "materials knowledge graph"
+      - "ontology-guided discovery"
+      - "semantic materials data"
+      - "graph-based reasoning"
+      - "FAIR materials data"
+    arxiv_categories: ["cond-mat.mtrl-sci", "cs.AI"]
+    semantic_scholar_fields: ["Materials Science", "Computer Science"]
+
+  - name: "rare_earth_magnets"
+    display_name: "Rare-Earth-Lean/Free Magnetic Materials Design"
+    priority: 4
+    keywords:
+      - "rare-earth-free magnets"
+      - "critical-element substitution"
+      - "rare-earth capturing"
+      - "high-throughput magnet screening"
+    arxiv_categories: ["cond-mat.mtrl-sci"]
+    semantic_scholar_fields: ["Materials Science", "Physics"]
+
+  - name: "chiral_spin_catalysis"
+    display_name: "Chiral Spin Catalysis Simulation"
+    priority: 3
+    keywords:
+      - "chiral spin catalysis"
+      - "chiral-induced spin selectivity"
+      - "spin-polarized reactions"
+      - "noncollinear DFT"
+    arxiv_categories: ["cond-mat.mtrl-sci", "physics.chem-ph"]
+    semantic_scholar_fields: ["Materials Science", "Chemistry", "Physics"]
+
+  - name: "spectroscopy_simulation"
+    display_name: "Spectroscopy & Microscopy Simulation"
+    priority: 5
+    keywords:
+      - "simulated materials spectroscopy"
+      - "microscopy image simulation"
+      - "EELS spectrum simulation"
+      - "XPS spectral prediction"
+      - "multimodal characterization AI"
+    arxiv_categories: ["cond-mat.mtrl-sci"]
+    semantic_scholar_fields: ["Materials Science", "Physics"]
+
+  - name: "battery_materials"
+    display_name: "Next-Generation Battery Materials Design"
+    priority: 2
+    keywords:
+      - "solid-state electrolytes"
+      - "multivalent ion storage"
+      - "ion transport mechanisms"
+      - "battery materials informatics"
+    arxiv_categories: ["cond-mat.mtrl-sci"]
+    semantic_scholar_fields: ["Materials Science", "Chemistry"]
+
+# 서베이 확장: 과거 논문 백필
+backfill:
+  enabled: true
+  window_days: 30             # 한 번에 탐색할 기간 (일)
+  max_age_days: 730           # 최대 과거 범위 (약 2년)
+  max_papers_per_topic: 10    # 토픽당 최대 수집 수
+
+# 서베이 확장: 인용 추적
+citation_chasing:
+  enabled: true
+  min_relevance_score: 70     # 이 점수 이상 논문만 추적
+  batch_size: 10              # 1회 실행 시 최대 추적 논문 수
+  max_references: 10          # 참고문헌 최대 수집 수
+  max_cited_by: 10            # 피인용 최대 수집 수
+
+# 수집 스케줄
+schedule:
+  collection_interval_hours: 8      # 수집+분석 간격 (8h = 하루 3회)
+  chase_hour: 3                     # citation chase 시각 (새벽 3시)
+  backfill_hour: 4                  # backfill 시각 (새벽 4시)
+  # 일간 다이제스트: 매일 아침
+  daily_digest_hour: 8              # 일간 다이제스트 시각 (24h)
+  # 주간 다이제스트: 주 1회 심층 보고
+  weekly_digest_day: "monday"       # 주간 다이제스트 요일
+  weekly_digest_hour: 7             # 주간 다이제스트 시각 (24h)
+
+# API 설정
+api:
+  gemini_model: "gemini-3-flash-preview"
+  gemini_api_key_env: "GEMINI_API_KEY"         # 환경변수명
+  semantic_scholar_api_key_env: "S2_API_KEY"   # 환경변수명 (선택, 없으면 rate limit 제한)
+  vision_enabled: false           # true로 변경 시 그림/표 분석 활성화
+  max_papers_per_run: 20          # 1회 수집 시 최대 논문 수
+  days_lookback: 7                # 최근 N일 이내 논문만 수집
+  throttle_seconds: 2             # API 호출 간 대기 시간
+
+# 슬랙 알림
+slack:
+  enabled: true
+  webhook_url_env: "SLACK_WEBHOOK_API"   # 환경변수명
+  # 다이제스트 생성 시 슬랙으로 요약 전송
+  notify_on_digest: true
+  # 중요 논문 발견 시 즉시 알림
+  notify_on_important: false
+  importance_threshold: 80        # 관련도 점수 이 이상이면 즉시 알림
+
+# 파일 경로 (프로젝트 루트 기준 상대경로)
+paths:
+  inbox: "./data/inbox"
+  processed: "./data/processed"
+  archive: "./data/archive"
+  reports: "../../generated/reports"
+  db: "./data/paper_scout.db"
+  logs: "./logs"
+
+# RAG 연동 (lab-research-agents Qdrant)
+rag:
+  enabled: true                    # 맥미니에서 true로 변경
+  qdrant_url: "http://localhost:6333"
+  collection: "lab_research_chunks"
+  openai_api_key_env: "OPENAI_API_KEY"
+  embedding_model: "text-embedding-3-small"
+  chunk_size: 1000
+  chunk_overlap: 200

@@ -1,0 +1,360 @@
+"""
+Lab Orchestrator — API Server
+
+Main FastAPI server on port 8000.
+Receives chat requests, runs orchestration, returns responses.
+"""
+
+import logging
+import sys
+from pathlib import Path
+from typing import Optional
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from fastapi import Body, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from orchestrator.schemas import ChatRequest, ChatResponse
+from orchestrator.graph import orchestrate, orchestrate_stream
+from orchestrator.memory import memory_store
+from orchestrator.router import get_all_agent_status
+from agents.registry import registry
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="CEML Lab Orchestrator",
+    description="Multi-agent research assistant orchestration API",
+    version="0.2.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "orchestrator"}
+
+
+@app.get("/agents")
+async def list_agents():
+    """List all registered agents with their status."""
+    agents = registry.list_agents()
+    status = await get_all_agent_status()
+    return {
+        "agents": [
+            {
+                "name": a.name,
+                "display_name": a.display_name,
+                "description": a.description,
+                "icon": a.icon,
+                "capabilities": a.capabilities,
+                "online": status.get(a.name, False),
+            }
+            for a in agents
+        ]
+    }
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Main chat endpoint (non-streaming)."""
+    logger.info(f"Chat request: {request.message[:100]}...")
+    response = await orchestrate(request)
+    logger.info(f"Chat response: agent={response.agent_name}, len={len(response.content)}")
+    return response
+
+
+@app.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """SSE streaming chat endpoint."""
+    from starlette.responses import StreamingResponse
+
+    logger.info(f"Stream request: {request.message[:100]}...")
+
+    return StreamingResponse(
+        orchestrate_stream(request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.get("/sessions")
+async def list_sessions():
+    """List conversation sessions with metadata."""
+    return {"sessions": memory_store.list_sessions_detail()}
+
+
+@app.get("/sessions/{conversation_id}/messages")
+async def get_session_messages(conversation_id: str):
+    """Get all messages for a specific session (for UI conversation restore)."""
+    messages = memory_store.get_session_messages(conversation_id)
+    if messages is None:
+        return {"error": "Session not found", "conversation_id": conversation_id}
+    return {
+        "conversation_id": conversation_id,
+        "messages": messages,
+    }
+
+
+@app.delete("/sessions/{conversation_id}")
+async def delete_session(conversation_id: str):
+    """Delete a conversation session."""
+    memory_store.delete(conversation_id)
+    return {"status": "deleted", "conversation_id": conversation_id}
+
+
+@app.get("/workspaces")
+async def list_workspaces():
+    """List available workspaces."""
+    from orchestrator.workspace import workspace_manager
+    return {"workspaces": workspace_manager.list_workspaces()}
+
+
+@app.get("/projects")
+async def list_projects():
+    """List all registered projects."""
+    from agents.project.project_store import list_projects
+    return {"projects": list_projects()}
+
+
+@app.get("/deadlines")
+async def get_deadlines():
+    """Get all deadlines sorted by D-day."""
+    from agents.project.project_store import get_all_deadlines
+    return {"deadlines": get_all_deadlines()}
+
+
+# ---- Model Profile Management ----
+
+@app.get("/model-profile")
+async def get_model_profile():
+    """Get current model profile status."""
+    from orchestrator.model_profiles import profile_manager
+    return profile_manager.get_status()
+
+
+@app.post("/model-profile")
+async def set_model_profile(request: dict):
+    """Switch model profile.
+
+    Body options:
+      {"profile": "cost"}                          — switch all agents
+      {"profile": "performance", "agent": "writing"} — switch one agent
+    """
+    from orchestrator.model_profiles import profile_manager
+
+    profile = request.get("profile")
+    agent = request.get("agent")
+
+    if not profile:
+        return {"error": "profile is required", "available": ["cost", "performance"]}
+
+    if agent:
+        ok = profile_manager.set_agent_profile(agent, profile)
+        msg = f"Agent '{agent}' → profile '{profile}'" if ok else f"Unknown profile: {profile}"
+    else:
+        ok = profile_manager.set_profile(profile)
+        msg = f"Global profile → '{profile}'" if ok else f"Unknown profile: {profile}"
+
+    return {
+        "success": ok,
+        "message": msg,
+        "status": profile_manager.get_status(),
+    }
+
+
+# Compatibility aliases for UI (which uses /models/profiles)
+@app.get("/models/profiles")
+async def get_model_profiles_compat():
+    """Compatibility: get model profiles (UI uses this path)."""
+    from orchestrator.model_profiles import profile_manager
+    return profile_manager.get_status()
+
+
+@app.post("/models/profile")
+async def set_model_profile_compat(request: dict):
+    """Compatibility: set model profile (UI uses this path)."""
+    return await set_model_profile(request)
+
+# ---- Archival Memory (Graphiti) ----
+
+@app.get("/memory/search")
+async def search_archival_memory(q: str, limit: int = 5):
+    """Search long-term archival memory (Graphiti knowledge graph)."""
+    from orchestrator.archival import archival_memory
+    results = await archival_memory.search(q, limit)
+    return {"query": q, "results": results, "count": len(results)}
+
+
+@app.get("/memory/entities")
+async def list_entities(limit: int = 20):
+    """List entities extracted from conversations."""
+    from orchestrator.archival import archival_memory
+    graph_data = await archival_memory.get_graph_data(limit)
+    # Return nodes as entities for backward compat
+    return {"entities": graph_data["nodes"], "count": len(graph_data["nodes"])}
+
+
+@app.get("/memory/graph")
+async def get_knowledge_graph(limit: int = 100):
+    """Get knowledge graph data for visualization (nodes + edges)."""
+    from orchestrator.archival import archival_memory
+    data = await archival_memory.get_graph_data(limit)
+    return data
+
+
+# ---- Knowledge Brief / Scout Knowledge ----
+
+@app.get("/knowledge/briefs")
+async def list_knowledge_briefs(limit: int = 30):
+    """List generated proactive Scout/Knowledge briefs."""
+    from integrations.knowledge_brief import list_knowledge_briefs
+    return {"briefs": list_knowledge_briefs(limit)}
+
+
+@app.get("/knowledge/briefs/latest")
+async def get_latest_knowledge_brief():
+    """Return the newest generated KnowledgeBrief artifact."""
+    from integrations.knowledge_brief import load_latest_brief
+    brief = load_latest_brief()
+    if not brief:
+        return {"error": "No knowledge briefs found"}
+    return brief
+
+
+@app.post("/knowledge/briefs/generate")
+async def generate_knowledge_brief_endpoint(body: Optional[dict] = Body(default=None)):
+    """Generate a proactive KnowledgeBrief from Scout evidence."""
+    from integrations.knowledge_brief import generate_knowledge_brief
+
+    body = body or {}
+    brief = generate_knowledge_brief(
+        date=body.get("date"),
+        days=int(body.get("days", 1)),
+        query=body.get("query", ""),
+        min_score=float(body.get("min_score", 70)),
+        promote=bool(body.get("promote", True)),
+        write_files=bool(body.get("write_files", True)),
+    )
+    return brief
+
+
+@app.get("/knowledge/search")
+async def search_knowledge(q: str, limit: int = 5):
+    """Search Scout DB, Qdrant RAG, and archival memory together."""
+    from integrations.knowledge_brief import search_knowledge
+    return await search_knowledge(q, limit)
+
+
+@app.get("/autonomy/actions")
+async def list_autonomy_actions(limit: int = 100):
+    """List recent autonomous local actions."""
+    from integrations.autonomy import list_autonomy_actions
+    return {"actions": list_autonomy_actions(limit)}
+
+
+# ---- Debate Engine ----
+
+@app.get("/debate/status")
+async def debate_status():
+    """Get debate engine status and configuration."""
+    from orchestrator.debate import debate_engine
+    debate_engine._ensure_loaded()
+    cfg = debate_engine._config
+    return {
+        "enabled": debate_engine.enabled,
+        "panelists": [
+            {"name": p.name, "model": p.model, "provider": p.provider}
+            for p in debate_engine._panelists
+        ],
+        "rounds": cfg.get("rounds", 3),
+        "auto_trigger": cfg.get("auto_trigger", True),
+        "complexity_threshold": cfg.get("complexity", {}).get("threshold", 0.7),
+    }
+
+
+@app.post("/debate/classify")
+async def classify_question(q: str):
+    """Test complexity classification for a question (iMAD)."""
+    from orchestrator.debate import debate_engine
+    should, score, reason = await debate_engine.should_debate(q)
+    return {
+        "question": q,
+        "should_debate": should,
+        "complexity_score": score,
+        "reason": reason,
+    }
+
+
+@app.get("/debate/stream")
+async def debate_stream(q: str, rounds: int = 3):
+    """Stream debate progress as SSE events.
+
+    Events: debate_start, round_start, panelist_done, judge_start, debate_done
+    """
+    import json
+    from starlette.responses import StreamingResponse
+    from orchestrator.debate import debate_engine
+    from orchestrator.memory import memory_store
+
+    memory = memory_store.get_or_create(None)
+
+    async def event_generator():
+        async for event in debate_engine.run_stream(
+            question=q,
+            context=await memory.build_llm_context(query=q),
+            num_rounds=rounds,
+        ):
+            yield f"event: {event['event']}\ndata: {json.dumps(event['data'], ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ---- Pipeline ----
+
+@app.get("/pipelines")
+async def list_pipelines():
+    """List available pipeline templates."""
+    from orchestrator.pipeline import pipeline_executor
+    return {"pipelines": pipeline_executor.list_pipelines()}
+
+
+@app.get("/pipeline/checkpoint/{run_id}")
+async def get_checkpoint(run_id: str):
+    """Get checkpoint status for a paused pipeline."""
+    from orchestrator.pipeline import pipeline_executor
+    cp = pipeline_executor.get_checkpoint(run_id)
+    if not cp:
+        return {"error": "No active checkpoint", "run_id": run_id}
+    return cp
+
+
+@app.post("/pipeline/checkpoint/{run_id}/respond")
+async def respond_checkpoint(run_id: str, body: dict):
+    """Respond to a HITL checkpoint (proceed/modify/abort)."""
+    from orchestrator.pipeline import pipeline_executor
+    action = body.get("action", "proceed")
+    mods = body.get("modifications")
+    return await pipeline_executor.respond_checkpoint(run_id, action, mods)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

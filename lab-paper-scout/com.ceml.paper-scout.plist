@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- 서비스 식별자 -->
+    <key>Label</key>
+    <string>com.ceml.paper-scout</string>
+
+    <!-- 실행 명령: Python 경로를 본인 환경에 맞게 수정 -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/mersoom/miniconda3/envs/lab-research-agents/bin/python</string>
+        <string>/Users/mersoom/Library/CloudStorage/Dropbox/Dev/CEML_RA/lab-paper-scout/run.py</string>
+        <string>daemon</string>
+    </array>
+
+    <!-- 작업 디렉토리 -->
+    <key>WorkingDirectory</key>
+    <string>/Users/mersoom/Library/CloudStorage/Dropbox/Dev/CEML_RA/lab-paper-scout</string>
+
+    <!-- 환경변수 (launchd는 .zshrc를 읽지 않으므로 직접 지정) -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>GEMINI_API_KEY</key>
+        <string>AIzaSyBYIcdTo7HoaK5mdFw1UKkboElKfu6KRDs</string>
+        <key>S2_API_KEY</key>
+        <string>s2k-t1VF34sIS88LTk3Ovcg6AczTOBzHg3oJbzH5kBPR</string>
+        <key>SLACK_WEBHOOK_API</key>
+        <string>https://hooks.slack.com/services/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</string>
+        <key>OPENAI_API_KEY</key>
+        <string>sk-proj-bIP_Aj8nd22ckSB7gJeeUPMq-QAc5aLuTxvIAES7tZS1TImAyQNAf4f8lZ50tmi7HgeuqVN7MzT3BlbkFJ6tH1nar-_SUZwd0k0eUKD3ePVbpRQH2apDSmzf67pftK3w1xJVMwEbRcpXvBjGTLQBwIDGefA</string>
+        <key>PATH</key>
+        <string>/Users/mersoom/miniconda3/envs/lab-research-agents/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <!-- 로그인 시 자동 시작 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- 종료 시 항상 자동 재시작 (reload 마커 포함) -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- 재시작 간 대기 (초) -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- 로그 출력 -->
+    <key>StandardOutPath</key>
+    <string>/Users/mersoom/Library/CloudStorage/Dropbox/Dev/CEML_RA/lab-paper-scout/logs/launchd_stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/mersoom/Library/CloudStorage/Dropbox/Dev/CEML_RA/lab-paper-scout/logs/launchd_stderr.log</string>
+</dict>
+</plist>

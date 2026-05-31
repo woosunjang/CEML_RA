@@ -1,0 +1,309 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  /* ── Color System (HSL) ── */
+  --bg-primary: hsl(240, 33%, 6%);
+  --bg-secondary: hsl(240, 30%, 11%);
+  --bg-tertiary: hsl(240, 25%, 17%);
+  --bg-elevated: hsl(240, 22%, 14%);
+
+  --text-primary: hsl(240, 30%, 95%);
+  --text-secondary: hsl(240, 15%, 70%);
+  --text-muted: hsl(240, 10%, 50%);
+
+  --accent: hsl(239, 84%, 67%);
+  --accent-light: hsl(239, 90%, 75%);
+  --accent-dim: hsl(239, 60%, 25%);
+
+  --border: hsl(240, 20%, 22%);
+  --border-light: hsl(240, 18%, 28%);
+
+  --success: hsl(160, 72%, 47%);
+  --warning: hsl(38, 92%, 65%);
+  --error: hsl(0, 72%, 55%);
+
+  /* Agent Colors */
+  --agent-literature: hsl(239, 84%, 67%);
+  --agent-teaching: hsl(160, 72%, 47%);
+  --agent-writing: hsl(38, 92%, 65%);
+  --agent-presentation: hsl(330, 70%, 60%);
+  --agent-project: hsl(187, 92%, 41%);
+  --agent-debate: hsl(270, 70%, 60%);
+
+  /* Gradients */
+  --gradient-brand: linear-gradient(135deg, hsl(239, 84%, 67%), hsl(270, 70%, 60%), hsl(330, 70%, 60%));
+  --gradient-card: linear-gradient(145deg, hsla(240, 30%, 15%, 0.6), hsla(240, 25%, 10%, 0.8));
+  --gradient-sidebar: linear-gradient(180deg, hsla(240, 30%, 8%, 0.95), hsla(240, 33%, 6%, 0.98));
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px hsla(0, 0%, 0%, 0.4);
+  --shadow-md: 0 4px 16px hsla(0, 0%, 0%, 0.5);
+  --shadow-lg: 0 8px 32px hsla(0, 0%, 0%, 0.6);
+  --shadow-glow: 0 0 20px hsla(239, 84%, 67%, 0.15);
+
+  /* Spacing */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+.animate-fade-in-scale { animation: fadeInScale 0.25s ease-out; }
+.animate-slide-in { animation: slideIn 0.3s ease-out; }
+.animate-pulse-subtle { animation: pulse-subtle 1.5s ease-in-out infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+/* ── Glassmorphism ── */
+.glass {
+  background: hsla(240, 28%, 12%, 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.glass-light {
+  background: hsla(240, 25%, 15%, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(240, 18%, 30%, 0.5);
+  border-radius: var(--radius-md);
+}
+
+.glass-hover {
+  transition: all var(--transition-normal);
+}
+.glass-hover:hover {
+  background: hsla(240, 28%, 15%, 0.75);
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+/* ── Card Variants ── */
+.card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: all var(--transition-normal);
+}
+
+.card:hover {
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-brand);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+/* ── Agent Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-literature { background: hsla(239, 84%, 67%, 0.2); color: hsl(239, 90%, 75%); }
+.badge-teaching { background: hsla(160, 72%, 47%, 0.2); color: hsl(160, 80%, 55%); }
+.badge-writing { background: hsla(38, 92%, 65%, 0.2); color: hsl(38, 95%, 70%); }
+.badge-presentation { background: hsla(330, 70%, 60%, 0.2); color: hsl(330, 75%, 68%); }
+.badge-project { background: hsla(187, 92%, 41%, 0.2); color: hsl(187, 95%, 52%); }
+.badge-debate { background: hsla(270, 70%, 60%, 0.2); color: hsl(270, 78%, 68%); }
+
+/* ── Skeleton Loading ── */
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-elevated) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Prose (Markdown) ── */
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: var(--text-primary);
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+.prose p { color: hsl(240, 20%, 85%); margin: 0.5em 0; }
+.prose strong { color: var(--text-primary); }
+.prose ul, .prose ol { color: hsl(240, 20%, 85%); }
+.prose code {
+  background: var(--bg-tertiary);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: hsl(270, 70%, 75%);
+}
+.prose pre {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  color: hsl(240, 20%, 85%);
+}
+.prose table { border-collapse: collapse; width: 100%; }
+.prose th {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+  font-size: 0.85em;
+}
+.prose td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  font-size: 0.85em;
+  color: hsl(240, 20%, 85%);
+}
+.prose a { color: var(--accent-light); text-decoration: none; }
+.prose a:hover { text-decoration: underline; }
+.prose blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  color: var(--text-secondary);
+}
+
+/* ── Navigation ── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  color: var(--text-primary);
+  background: hsla(240, 25%, 18%, 0.6);
+}
+
+.nav-item.active {
+  color: var(--accent-light);
+  background: hsla(239, 84%, 67%, 0.1);
+  border: 1px solid hsla(239, 84%, 67%, 0.2);
+}
+
+/* ── Status Dot ── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-online {
+  background: var(--success);
+  box-shadow: 0 0 6px hsla(160, 72%, 47%, 0.4);
+}
+
+.status-offline {
+  background: var(--text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sidebar-desktop { display: none; }
+}
+
+@media (min-width: 769px) {
+  .nav-mobile { display: none; }
+}
