@@ -309,6 +309,11 @@ The Scout evidence adapter now converts read-only Scout paper metadata into
 research_thread source signals and evidence previews without mutating Scout DB,
 Qdrant, Neo4j, Graphiti, Slack, or runtime services.
 
-The next development target is the Coordinator dry-run loop. That target should
-improve the same durable research threads before adding UI, Slack commands,
-KG/RAG writes, or automation.
+The Coordinator dry-run loop now improves the same durable research threads
+through Scout, evidence synthesis, idea candidate, critique, and next-action
+stages using local artifacts only.
+
+The next development target is the read-only review surface: expose
+research_thread artifacts through API endpoints so UI and Slack can later share
+the same memory spine. Do not add mutation endpoints, Slack commands, KG/RAG
+writes, or automation yet.

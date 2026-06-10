@@ -1,5 +1,28 @@
 # Task Log
 
+## 2026-06-11 — Implemented Coordinator dry-run loop
+
+**Status:** Complete on `codex/ceml-ra-coordinator-dry-run`.
+
+The Chunk 3 coordinator advances local `research_thread` artifacts through
+Scout, evidence synthesis, idea candidate, critique, and next-action stages.
+It is deterministic and does not call LLMs, Slack, KG/RAG stores, Scout writes,
+or runtime services.
+
+Implementation:
+
+```text
+lab-orchestrator/orchestrator/research_coordinator.py
+lab-orchestrator/tools/research_coordinator_dry_run.py
+lab-orchestrator/tests/test_research_coordinator.py
+```
+
+The CLI defaults to dry-run. `--execute` updates only local research_thread
+JSON and Markdown artifacts.
+
+Next product step: Chunk 4, read-only review surface for research_thread
+artifacts.
+
 ## 2026-06-11 — Implemented Scout evidence to research_thread adapter
 
 **Status:** Complete on `codex/ceml-ra-scout-thread-adapter`.
