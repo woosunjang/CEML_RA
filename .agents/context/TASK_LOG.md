@@ -1,5 +1,59 @@
 # Task Log
 
+## 2026-06-10 — Internalized git metadata for Dropbox source separation
+
+**Status:** Complete. The source folder can now be removed from Dropbox sync
+without leaving its Git object database behind in Dropbox.
+
+**What changed:** The repository no longer uses a `.git` pointer file to an
+external gitdir. The external metadata directory was moved from:
+
+```text
+/Users/woosun/Dropbox/Dev/git_repo/CEML_RA.git
+```
+
+to the source folder's internal:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML_RA/.git
+```
+
+The local `core.worktree` absolute-path setting was removed after the move, so
+the repo behaves like a normal standalone clone. The temporary pointer-file
+backup was removed after verification.
+
+**Verification:**
+
+```text
+git rev-parse --git-dir            # .git
+git rev-parse --git-common-dir     # .git
+git config --local --get core.worktree
+git remote -v
+git log --oneline --decorate -6
+git stash list
+git branch --list
+git merge-base --is-ancestor main HEAD
+git fsck --connectivity-only
+```
+
+`core.worktree` returned no value, the GitHub remote remained
+`https://github.com/woosunjang/CEML_RA.git`, the preserved branches and stash
+remained available, and connectivity fsck passed with only dangling tree
+notices. The old external
+`/Users/woosun/Dropbox/Dev/git_repo/CEML_RA.git` path no longer exists.
+
+**Operational note:** Disable Dropbox sync only for the source folder:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML_RA
+```
+
+Keep the durable artifact root synced:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts
+```
+
 ## 2026-06-10 — Audited old autonomy-pulse surfaces before reuse
 
 **Status:** Old-surface audit index committed in `985fb9d`, then tightened

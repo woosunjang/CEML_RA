@@ -1,7 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-10 KST
-**Status:** Same-folder Stage 0 branch is clean and rebuilding from `main`.
+**Status:** Same-folder Stage 0 source/Dropbox separation is complete enough to
+disable Dropbox sync for the source folder.
 
 This handoff intentionally discards the old autonomy-pulse momentum as an
 operating default. Earlier mission IDs, Sprint Executor next actions, proposal
@@ -61,6 +62,12 @@ plan only after Stage 0 is complete.
   fresh from current Stage 0 contracts.
 - Git GC warning was resolved after pruning unreachable loose objects and
   running `git gc`; the preserved branches and stash remain available.
+- Git metadata is now internal to this source folder at `.git/`. The previous
+  external gitdir `/Users/woosun/Dropbox/Dev/git_repo/CEML_RA.git` was moved
+  into the repo, and the local `core.worktree` absolute path was removed.
+- The user can now disable Dropbox sync for
+  `/Users/woosun/Dropbox/Dev/CEML_RA`. Keep the artifact root
+  `/Users/woosun/Dropbox/Dev/CEML/RA_artifacts` Dropbox-synced.
 
 ## Guardrails
 
