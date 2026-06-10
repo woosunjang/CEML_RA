@@ -56,8 +56,11 @@ plan only after Stage 0 is complete.
   default and only copies one user-selected file into the artifact root when
   called with `--execute`.
 - In-progress Stage 0 work now adds `docs/old-surface-audit-2026-06-10.md`,
-  an index classifying old autonomy-pulse writer/report/probe surfaces before
-  reuse.
+  an index classifying old autonomy-pulse writer/report/probe surfaces as
+  reference-only. Default rule: do not reuse old autonomy-pulse code; implement
+  fresh from current Stage 0 contracts.
+- Git GC warning was resolved after pruning unreachable loose objects and
+  running `git gc`; the preserved branches and stash remain available.
 
 ## Guardrails
 
@@ -66,4 +69,5 @@ plan only after Stage 0 is complete.
 - Do not run Sprint Executor or active mission next-actions by default.
 - Do not push without explicit approval.
 - Do not treat read-only observation as research progress.
-- Do not restore old autonomy-pulse surfaces unless they pass the audit gates.
+- Do not restore old autonomy-pulse code unless the user explicitly approves a
+  specific file or hunk.

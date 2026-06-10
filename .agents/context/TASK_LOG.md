@@ -2,7 +2,8 @@
 
 ## 2026-06-10 — Audited old autonomy-pulse surfaces before reuse
 
-**Status:** Old-surface audit index added locally and not yet committed.
+**Status:** Old-surface audit index committed in `985fb9d`, then tightened
+locally to make fresh implementation the default.
 
 **What changed:** Added `docs/old-surface-audit-2026-06-10.md`, a Stage 0
 classification of old autonomy-pulse surfaces from the preserved branches:
@@ -18,8 +19,12 @@ state mutation, or old code restore was performed.
 
 **Decisions captured:**
 
-- `core`: evidence contract/review, minimal mission ledger, eventually a
-  host-local job store.
+- Old autonomy-pulse code should not be reused by default.
+- Old branches are reference-only and should mostly serve as failure-mode
+  evidence and vocabulary.
+- `core`: product needs that still matter, implemented fresh. This includes
+  evidence contract/review, minimal mission ledger, and eventually a host-local
+  job store.
 - `merge`: one future operator surface, selected KG/RAG/Scout promotion ideas,
   selected UI ideas after API contracts exist.
 - `dev-diagnostic`: narrow smoke/probe ideas only as developer tools.
@@ -32,8 +37,26 @@ state mutation, or old code restore was performed.
 **Next recommended Stage 0 implementation slice:**
 
 ```text
-evidence_contract + evidence_review + focused tests
+fresh evidence_contract + fresh evidence_review + focused tests
 ```
+
+**Follow-up adjustment:** The user correctly challenged whether old code should
+be reused at all. The audit was tightened so the default rule is now:
+
+```text
+Do not reuse old autonomy-pulse code.
+```
+
+Old branches should serve as anti-pattern/reference-only context. New Stage 0
+capabilities should be implemented fresh from current contracts unless the user
+explicitly approves a specific file or hunk.
+
+**Git maintenance:** The persistent GC warning was resolved. Before cleanup,
+`git count-objects -vH` showed 42,391 loose objects using 444.43 MiB and
+`gc.log` reported too many unreachable loose objects. After removing the stale
+`gc.log`, running `git prune`, and then `git gc`, loose objects dropped to 39
+using 364 KiB, packs dropped from 11 to 1, and no `gc.log` remains. Branches and
+the `stage0-context-reset-before-main-switch` stash were preserved.
 
 ## 2026-06-10 — Added explicit portable snapshot export helper
 
