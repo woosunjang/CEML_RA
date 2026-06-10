@@ -6,11 +6,19 @@ Loads environment variables and provides module-level constants.
 
 import os
 from pathlib import Path
+from typing import Optional
 
 from dotenv import load_dotenv
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_PROJECT_ROOT / ".env")
+
+
+def _optional_env_path(name: str) -> Optional[Path]:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return None
+    return Path(raw).expanduser().resolve()
 
 # OpenAI
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
@@ -47,13 +55,17 @@ PROJECT_ROOT: Path = _PROJECT_ROOT
 # ── CEML_RA 프로젝트 루트 기준 경로 ──
 CEML_ROOT: Path = _PROJECT_ROOT.parent  # /path/to/CEML_RA
 
-# 산출물 (에이전트 생성 파일)
-GENERATED_DIR: Path = CEML_ROOT / "generated"
-GENERATED_PROJECT_DIR: Path = GENERATED_DIR / "project"
-GENERATED_WRITING_DIR: Path = GENERATED_DIR / "writing"
-GENERATED_TEACHING_DIR: Path = GENERATED_DIR / "teaching"
-GENERATED_PRESENTATION_DIR: Path = GENERATED_DIR / "presentation"
-GENERATED_REPORTS_DIR: Path = GENERATED_DIR / "reports"
+# Durable artifacts. Set CEML_RA_ARTIFACTS_DIR to move generated research
+# outputs outside the source tree; otherwise fall back to in-repo generated/.
+ARTIFACTS_DIR: Path = _optional_env_path("CEML_RA_ARTIFACTS_DIR") or (CEML_ROOT / "generated")
+
+# Backward-compatible generated aliases used by existing agents.
+GENERATED_DIR: Path = ARTIFACTS_DIR
+GENERATED_PROJECT_DIR: Path = ARTIFACTS_DIR / "project"
+GENERATED_WRITING_DIR: Path = ARTIFACTS_DIR / "writing"
+GENERATED_TEACHING_DIR: Path = ARTIFACTS_DIR / "teaching"
+GENERATED_PRESENTATION_DIR: Path = ARTIFACTS_DIR / "presentation"
+GENERATED_REPORTS_DIR: Path = ARTIFACTS_DIR / "reports"
 
 # 데이터 (DB, 세션, 프로젝트)
 DATA_DIR: Path = CEML_ROOT / "data"
@@ -70,4 +82,3 @@ COMMANDS_DIR: Path = _PROJECT_ROOT / "commands"
 
 # Archival 큐 (별도 Worker 프로세스용)
 ARCHIVAL_QUEUE_DIR: Path = COMMANDS_DIR / "archival_queue"
-

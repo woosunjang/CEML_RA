@@ -74,3 +74,4 @@ curl -X POST http://192.168.0.12:8000/chat \
 | [agent-catalog.md](agent-catalog.md) | 에이전트 상세 카탈로그 |
 | [architecture.md](architecture.md) | 시스템 아키텍처 상세 |
 | [deployment.md](deployment.md) | M2 맥미니 배포·운영 가이드 |
+| [artifact-runtime-boundary.md](artifact-runtime-boundary.md) | Stage 0 source/artifact/runtime storage boundary |

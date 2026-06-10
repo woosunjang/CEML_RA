@@ -4,6 +4,9 @@
 *.py[cod]
 __pycache__/
 **/__pycache__/
+*conflicted copy*
+*conflict copy*
+*충돌된 사본*
 
 # Python / test caches
 .pytest_cache/
@@ -26,6 +29,14 @@ logs/
 
 # Generated artifacts and mutable local data
 generated/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+data/backups/
+data/*.jsonl
 data/sessions/
 data/*.db
 data/*.db-*
@@ -35,16 +46,27 @@ data/scout_graph_promotion_state.json
 data/scout_sync_state.json
 lab-orchestrator/data/*.db
 lab-orchestrator/data/*.db-*
+lab-orchestrator/data/
 lab-paper-scout/data/*.db
 lab-paper-scout/data/*.db-*
+lab-paper-scout/data/.daemon.pid
+lab-paper-scout/data/.restart
+lab-paper-scout/data/.test_scout.db
 lab-paper-scout/data/archive/
 lab-paper-scout/data/backups/
+lab-paper-scout/data/inbox/
 lab-paper-scout/data/processed/
 lab-paper-scout/data/reports/
 lab-paper-scout/data/backfill_state.json
+lab-paper-scout/data/scout_status_snapshot.json
+lab-research-agents/data/parsed/*
+!lab-research-agents/data/parsed/.gitkeep
+lab-research-agents/data/raw/*
+!lab-research-agents/data/raw/.gitkeep
 lab-research-agents/qdrant_storage/
 
 # Local command queues
+lab-orchestrator/commands/
 lab-orchestrator/commands/archival_queue/*.json
 lab-orchestrator/commands/archival_queue/failed/
 lab-orchestrator/commands/outbox/

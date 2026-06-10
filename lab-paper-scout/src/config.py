@@ -10,6 +10,9 @@ from typing import Dict, List, Optional
 import yaml
 
 
+ARTIFACTS_ENV = "CEML_RA_ARTIFACTS_DIR"
+
+
 class Config:
     """Loads and provides access to config.yaml settings."""
 
@@ -44,6 +47,10 @@ class Config:
         """Resolve a path from config relative to project root."""
         if key in self._path_overrides:
             return (self.project_root / self._path_overrides[key]).resolve()
+        if key == "reports":
+            artifacts_dir = os.environ.get(ARTIFACTS_ENV)
+            if artifacts_dir and artifacts_dir.strip():
+                return (Path(artifacts_dir).expanduser() / "reports").resolve()
         raw = self._data["paths"].get(key, f"./data/{key}")
         return (self.project_root / raw).resolve()
 

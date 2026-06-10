@@ -1,7 +1,7 @@
 # Handoff
 
 **Updated:** 2026-06-10 KST
-**Status:** Same-folder Stage 0 branch created from `main`.
+**Status:** Same-folder Stage 0 branch is clean and rebuilding from `main`.
 
 This handoff intentionally discards the old autonomy-pulse momentum as an
 operating default. Earlier mission IDs, Sprint Executor next actions, proposal
@@ -45,9 +45,13 @@ plan only after Stage 0 is complete.
 - That commit should not be pushed or reused unless explicitly re-approved.
 - The previous dirty state was saved in git stash:
   `stage0-context-reset-before-main-switch`.
-- Because this branch is from `main`, files that existed only in old branches
-  may appear as untracked working-tree leftovers. Treat cleanup of those files
-  as a Stage 0 task and preview before deleting.
+- A full same-folder snapshot was archived before cleanup:
+  `/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/source_archives/CEML_RA_full_with_gitdir_20260610_220548.tar.gz`.
+  It includes both `CEML_RA/` and external `git_repo/CEML_RA.git/` metadata.
+- The old untracked/runtime leftovers were then removed from the working folder.
+  Current Stage 0 source should remain clean and main-derived.
+- In-progress Stage 0 work now adds minimal artifact-root support:
+  `CEML_RA_ARTIFACTS_DIR`, `ARTIFACTS_DIR`, generated fallback, docs, and tests.
 
 ## Guardrails
 
@@ -55,5 +59,4 @@ plan only after Stage 0 is complete.
 - Do not mutate live DB/KG/RAG/Scout state during planning.
 - Do not run Sprint Executor or active mission next-actions by default.
 - Do not push without explicit approval.
-- Do not delete untracked leftovers without explicit approval after preview.
 - Do not treat read-only observation as research progress.
