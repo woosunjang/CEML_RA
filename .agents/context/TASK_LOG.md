@@ -1,5 +1,31 @@
 # Task Log
 
+## 2026-06-11 — Completed Test Chunk 1 Research Question Factory
+
+**Status:** Complete on `codex/ceml-ra-test-chunk-1-question-factory`.
+
+Generated durable Research Question Factory artifacts for:
+
+```text
+materials_ontology_kg
+rare_earth_magnets
+```
+
+Artifact root:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_1_question_factory/
+```
+
+Each topic has 10 fresh question candidates, source/domain signals, do-not-copy
+checks, and top two recommendations. The durable research_thread artifacts
+were updated only with decisions and next actions. No literature claims were
+accepted, and no Scout DB, Qdrant, Neo4j, Graphiti, Slack, or runtime services
+were mutated.
+
+Next product step: Test Chunk 2, evidence briefs and idea matrices from the
+selected question-factory outputs.
+
 ## 2026-06-11 — Realigned post-Chunk-4 validation direction
 
 **Status:** Complete on `codex/ceml-ra-test-plan-realign`.

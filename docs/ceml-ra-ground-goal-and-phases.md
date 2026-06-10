@@ -316,8 +316,9 @@ stages using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-The next development target is Test Chunk 1: a Research Question Factory for
-`materials_ontology_kg` and `rare_earth_magnets`. KG ingest preview work is
-deferred until useful question, evidence-brief, and idea-matrix artifacts prove
-what should be remembered. Do not add live KG/RAG writes, mutation endpoints,
-Slack commands, or automation yet.
+Test Chunk 1 generated Research Question Factory artifacts for
+`materials_ontology_kg` and `rare_earth_magnets`. The next development target
+is Test Chunk 2: evidence briefs and idea matrices from the selected questions.
+KG ingest preview work is deferred until useful question, evidence-brief, and
+idea-matrix artifacts prove what should be remembered. Do not add live KG/RAG
+writes, mutation endpoints, Slack commands, or automation yet.
