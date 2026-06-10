@@ -36,13 +36,14 @@ using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-The post-Chunk-4 validation queue is complete through Goal 4. Durable artifacts
-now cover the Research Question Factory, evidence briefs, idea matrices, local
-research partner test, and observed-value automation backlog. The next product
-target is an artifact-first route-ranking extraction sheet for the rare-earth
-magnet HRE-sparing idea. KG ingest preview work remains deferred until the
-artifact chain shows exactly what is worth remembering. It must not write to
-Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
+The post-Chunk-4 validation queue is complete through Goal 4, and the
+artifact-first route-ranking extraction sheet for the rare-earth magnet
+HRE-sparing idea now exists under the durable artifact root. The next product
+decision is whether to fill remaining GBD/recycling source-value gaps for
+proposal seeding or first add a reviewable `research_thread` patch CLI if
+another thread-writing artifact is needed. KG ingest preview work remains
+deferred until the artifact chain shows exactly what is worth remembering. It
+must not write to Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
 
 ## Storage Boundary
 

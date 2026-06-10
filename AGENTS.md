@@ -47,14 +47,15 @@ Scout, evidence synthesis, idea candidate, critique, and next-action stages
 using local artifacts only, and the read-only review API can expose those
 artifacts.
 
-The post-Chunk-4 validation queue is complete through Goal 4: plan
-realignment, Research Question Factory, evidence briefs, idea matrices, local
-research partner test, and observed-value automation backlog. The next
-recommended implementation slice is an artifact-first route-ranking extraction
-sheet for the rare-earth magnet HRE-sparing idea. KG ingest preview work remains
-deferred until these research-value artifacts prove exactly what should be
-remembered. Do not begin with internal autonomy machinery, old mission flows,
-status-reporting slices, Slack, or live KG/RAG writes.
+The post-Chunk-4 validation queue is complete through Goal 4, and the
+artifact-first route-ranking extraction sheet for the rare-earth magnet
+HRE-sparing idea now exists. The next small product decision is whether to fill
+the remaining GBD/recycling source-value gaps for proposal seeding or first add
+a reviewable `research_thread` patch CLI if another thread-writing artifact is
+needed. KG ingest preview work remains deferred until these research-value
+artifacts prove exactly what should be remembered. Do not begin with internal
+autonomy machinery, old mission flows, status-reporting slices, Slack, or live
+KG/RAG writes.
 
 ## Read First
 

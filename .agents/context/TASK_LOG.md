@@ -1,5 +1,37 @@
 # Task Log
 
+## 2026-06-11 — Completed rare-earth magnet route-ranking sheet
+
+**Status:** Complete on `codex/ceml-ra-route-ranking-sheet`.
+
+Generated durable Markdown and JSON artifacts for the HRE-sparing route-ranking
+sheet:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/route_ranking_extraction_sheet/
+```
+
+The sheet compares four route families without treating missing data as
+negative proof:
+
+```text
+grain-boundary diffusion / HRE-lean boundary engineering
+HRE-free microstructure refinement / rapid consolidation
+digital-twin or ML-guided process optimization
+recycling-linked reprocessing / magnet-to-magnet route
+```
+
+It identifies FSPS HRE-free and GBD HRE-lean routes as proposal-review lanes,
+digital-twin/ML as a calculation-scoping lane, and recycling-linked
+reprocessing as weak until more downstream property evidence is extracted. The
+`rare_earth_magnets` research_thread was updated only with reviewed evidence,
+failure mode, decision, and next action items. No Scout DB, Qdrant, Neo4j,
+Graphiti, Slack, KG/RAG, runtime, or watchdog state was mutated.
+
+Remaining friction: this chunk again needed a one-off thread update script. If
+the next artifact-producing chunk also needs thread writes, promote
+`research_thread_patch_cli` before further proposal or KG preview work.
+
 ## 2026-06-11 — Completed Goal 4 observed-value automation backlog
 
 **Status:** Complete on `codex/ceml-ra-automation-backlog`.

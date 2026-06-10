@@ -1,8 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Goal 0 through Goal 4 are complete on
-`codex/ceml-ra-automation-backlog`. Stale local runtimes were stopped on
+**Status:** Rare-earth magnet route-ranking sheet is implemented on
+`codex/ceml-ra-route-ranking-sheet`. Stale local runtimes were stopped on
 2026-06-11 KST.
 
 ## Current Ground
@@ -58,12 +58,9 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next recommended implementation slice is an artifact-first route-ranking
-extraction sheet for the rare-earth magnet HRE-sparing idea:
-
-```text
-codex/ceml-ra-route-ranking-sheet
-```
+The next small product decision is whether to fill the remaining GBD/recycling
+source-value gaps for proposal seeding or first add a reviewable
+`research_thread` patch CLI if another thread-writing artifact is needed.
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -90,6 +87,12 @@ Goal 4 artifacts:
 
 ```text
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_4_automation_backlog/
+```
+
+Route-ranking artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/route_ranking_extraction_sheet/
 ```
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
