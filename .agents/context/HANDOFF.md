@@ -1,9 +1,9 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Test Chunk 1 Research Question Factory artifacts are implemented
-on `codex/ceml-ra-test-chunk-1-question-factory`. Stale local runtimes were
-stopped on 2026-06-11 KST.
+**Status:** Test Chunk 2 evidence briefs and idea matrices are implemented on
+`codex/ceml-ra-test-chunk-2-evidence-briefs`. Stale local runtimes were stopped
+on 2026-06-11 KST.
 
 ## Current Ground
 
@@ -58,9 +58,9 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step is Test Chunk 2: evidence briefs and idea matrices from
-the selected Research Question Factory outputs for `materials_ontology_kg` and
-`rare_earth_magnets`.
+The next product step is Goal 3: a local Slack-style research partner
+transcript for one selected idea. Use `idea_rem_hre_sparing_route_ranking` as
+the first selected idea unless the user redirects.
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -69,6 +69,12 @@ Test Chunk 1 artifacts:
 
 ```text
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_1_question_factory/
+```
+
+Test Chunk 2 artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_2_evidence_briefs/
 ```
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack

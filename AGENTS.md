@@ -47,13 +47,14 @@ Scout, evidence synthesis, idea candidate, critique, and next-action stages
 using local artifacts only, and the read-only review API can expose those
 artifacts.
 
-Test Chunk 1 generated Research Question Factory artifacts for
-`materials_ontology_kg` and `rare_earth_magnets`. The next product step is Test
-Chunk 2: evidence briefs and idea matrices from those selected questions. KG
-ingest preview work is deferred until useful question, evidence-brief, and
-idea-matrix artifacts prove what should be remembered. Do not begin with
-internal autonomy machinery, old mission flows, status-reporting slices, Slack,
-or live KG/RAG writes.
+Test Chunk 1 generated Research Question Factory artifacts, and Test Chunk 2
+generated evidence briefs and idea matrices for `materials_ontology_kg` and
+`rare_earth_magnets`. The next product step is Goal 3: a local Slack-style
+research partner transcript that challenges one selected idea without sending
+Slack messages. KG ingest preview work is deferred until these research-value
+artifacts prove what should be remembered. Do not begin with internal autonomy
+machinery, old mission flows, status-reporting slices, Slack, or live KG/RAG
+writes.
 
 ## Read First
 
