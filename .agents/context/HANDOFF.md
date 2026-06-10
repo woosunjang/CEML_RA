@@ -1,8 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Read-only research_thread review API is implemented on
-`codex/ceml-ra-thread-review-api`. Stale local runtimes were stopped on
+**Status:** Post-Chunk-4 direction is realigned on
+`codex/ceml-ra-test-plan-realign`. Stale local runtimes were stopped on
 2026-06-11 KST.
 
 ## Current Ground
@@ -58,8 +58,11 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step is a KG ingest preview artifact generated from
-research_thread evidence, decisions, and next actions.
+The next product step is Test Chunk 1: a Research Question Factory for
+`materials_ontology_kg` and `rare_earth_magnets`.
+
+KG ingest preview work is deferred until the question factory, evidence brief,
+and idea matrix artifacts show what is worth remembering.
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
 messages, or writes to Scout DB, Qdrant, Neo4j, or Graphiti for the next chunk.

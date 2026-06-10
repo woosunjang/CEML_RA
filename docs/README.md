@@ -36,9 +36,11 @@ using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-The next product target is a KG ingest preview artifact generated from
-research_thread evidence, decisions, and next actions. It must not write to
-Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
+The next product target is Test Chunk 1: a Research Question Factory for
+`materials_ontology_kg` and `rare_earth_magnets`. KG ingest preview work is
+deferred until the question factory, evidence brief, and idea matrix artifacts
+show what is worth remembering. It must not write to Neo4j, Graphiti, Qdrant,
+Scout DB, Slack, or runtime services.
 
 ## Storage Boundary
 

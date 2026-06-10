@@ -1,5 +1,22 @@
 # Task Log
 
+## 2026-06-11 — Realigned post-Chunk-4 validation direction
+
+**Status:** Complete on `codex/ceml-ra-test-plan-realign`.
+
+After Chunk 4, the repo still pointed to a KG ingest preview as the next
+product step. That was premature for the current validation plan. The next
+product step is now Test Chunk 1: Research Question Factory for:
+
+```text
+materials_ontology_kg
+rare_earth_magnets
+```
+
+KG ingest preview work is deferred until useful question, evidence-brief, and
+idea-matrix artifacts prove what should be remembered. Do not write to live
+Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
+
 ## 2026-06-11 — Implemented read-only research_thread review API
 
 **Status:** Complete on `codex/ceml-ra-thread-review-api`.
@@ -21,9 +38,10 @@ lab-orchestrator/api/server.py
 lab-orchestrator/tests/test_research_thread_api.py
 ```
 
-Next product step: KG ingest preview artifact from research_thread evidence,
-decisions, and next actions. Do not write to live Neo4j, Graphiti, Qdrant,
-Scout DB, Slack, or runtime services.
+Next product step was later corrected to Test Chunk 1: Research Question
+Factory. KG ingest preview is deferred until research-value artifacts prove
+what should be remembered. Do not write to live Neo4j, Graphiti, Qdrant, Scout
+DB, Slack, or runtime services.
 
 ## 2026-06-11 — Implemented Coordinator dry-run loop
 
