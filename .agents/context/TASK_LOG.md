@@ -1,5 +1,34 @@
 # Task Log
 
+## 2026-06-11 — Implemented Phase 1 research_thread core
+
+**Status:** Complete on `codex/ceml-ra-research-thread-core`.
+
+The Phase 1 core memory spine now has durable `research_thread` JSON and
+Markdown artifacts, a dry-run-by-default seed CLI, and focused tests.
+
+Implementation:
+
+```text
+lab-orchestrator/orchestrator/research_thread.py
+lab-orchestrator/tools/seed_research_threads.py
+lab-orchestrator/tests/test_research_thread.py
+```
+
+The default seed topics are:
+
+```text
+materials_ontology_kg
+rare_earth_magnets
+```
+
+The seed artifacts contain ground-contract source signals, first-proof-loop
+decisions, concrete next research questions, and a KG preview guardrail. They
+do not contain fake literature claims or mutate live Scout, Qdrant, Neo4j,
+Graphiti, Slack, or runtime state.
+
+Next product step: Chunk 2, Scout evidence to research_thread adapter.
+
 ## 2026-06-11 — Collapsed docs to the ground contract
 
 **Status:** Complete on `codex/ceml-ra-ground-contract`.

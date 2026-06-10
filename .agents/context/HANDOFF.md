@@ -1,8 +1,9 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** `main` is the clean ground for the CEML_RA integrated research
-colleague rebuild. Stale local runtimes were stopped on 2026-06-11 KST.
+**Status:** Phase 1 core `research_thread` memory spine is implemented on
+`codex/ceml-ra-research-thread-core`. Stale local runtimes were stopped on
+2026-06-11 KST.
 
 ## Current Ground
 
@@ -40,17 +41,21 @@ ground contract is:
 docs/ceml-ra-ground-goal-and-phases.md
 ```
 
-The next product step is Phase 1:
+The Phase 1 core memory-spine implementation is:
 
 ```text
-Define the research_thread memory spine and seed parallel threads for
-materials_ontology_kg and rare_earth_magnets.
+lab-orchestrator/orchestrator/research_thread.py
+lab-orchestrator/tools/seed_research_threads.py
 ```
 
 Initial topics remain:
 
 - `materials_ontology_kg`
 - `rare_earth_magnets`
+
+The next product step is Chunk 2: convert read-only Scout paper evidence into
+research_thread source signals and evidence previews. Do not mutate Scout DB,
+Qdrant, Neo4j, Graphiti, or Slack for that chunk.
 
 Do not begin with internal autonomy machinery, old mission flows, old audit
 findings, old schedule plans, dashboard/status slices, or Sprint Executor

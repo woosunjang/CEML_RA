@@ -39,10 +39,11 @@ The live direction is:
    planning, API, Slack, deployment, architecture, or runtime-operation docs as
    current direction.
 
-The next product step is Phase 1 from the ground contract: define the
-`research_thread` memory spine and seed parallel threads for
-`materials_ontology_kg` and `rare_earth_magnets`. Do not begin with internal
-autonomy machinery, old mission flows, or status-reporting slices.
+The Phase 1 core memory spine now exists as durable `research_thread` JSON and
+Markdown artifacts. The next product step is the Scout evidence adapter:
+convert read-only Scout paper evidence into `research_thread` source signals
+and evidence previews. Do not begin with internal autonomy machinery, old
+mission flows, status-reporting slices, UI, Slack, or KG/RAG writes.
 
 ## Read First
 

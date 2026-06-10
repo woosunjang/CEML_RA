@@ -296,14 +296,18 @@ They may be inspected only when the user asks for a specific artifact or when a
 cleanup preview needs to identify what will be removed. They should not be used
 as the blueprint for the rebuild.
 
-## First Development Target
+## Current Development Target
 
-The first implementation target after this document is Phase 1:
+The Phase 1 core memory-spine implementation now exists as durable
+`research_thread` JSON and Markdown artifacts seeded for:
 
 ```text
-Create the research_thread memory spine and seed parallel threads for
 materials_ontology_kg and rare_earth_magnets.
 ```
 
-That target should produce durable artifacts before adding UI, Slack commands,
-or automation.
+The next development target is the Scout evidence adapter: convert read-only
+Scout paper evidence into research_thread source signals and evidence previews
+without mutating Scout DB, Qdrant, Neo4j, Graphiti, Slack, or runtime services.
+
+That target should improve the same durable research threads before adding UI,
+Slack commands, KG/RAG writes, or automation.

@@ -17,12 +17,17 @@ long-term memory. It is not currently defined by any old local runtime, old
 Slack command surface, old launchd service, old API reference, or old autonomy
 mission flow.
 
-The next product target is Phase 1 from the ground contract:
+The Phase 1 core memory-spine target is implemented as a local artifact
+contract:
 
 ```text
-Create the research_thread memory spine and seed parallel threads for
-materials_ontology_kg and rare_earth_magnets.
+research_thread JSON + Markdown artifacts under
+${CEML_RA_ARTIFACTS_DIR:-generated}/research_threads/
 ```
+
+The next product target is the Scout evidence adapter: convert read-only Scout
+paper evidence into research_thread source signals and evidence previews
+without mutating Scout DB, Qdrant, Neo4j, Graphiti, or Slack.
 
 ## Storage Boundary
 
