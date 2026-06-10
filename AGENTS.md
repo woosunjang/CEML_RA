@@ -7,6 +7,17 @@ runtime prompts for the application's internal agents.
 
 CEML_RA has been reset from `main` for a clean rebuild.
 
+The ground product goal is now defined by:
+
+```text
+docs/ceml-ra-ground-goal-and-phases.md
+```
+
+CEML_RA is a PhD-level integrated research colleague with long-term memory,
+not an automatic report tool or status dashboard. Automatic weekly work,
+on-demand research discussion, KG/RAG memory, artifacts, proposal writing, and
+project management must share one accumulated research context.
+
 Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
 proposal backlog pressure, generated/ops artifacts, old schedule plans, and
 old audit documents as sealed historical material. Do not inspect, restore,
@@ -24,22 +35,21 @@ The live direction is:
 
 3. Live databases, logs, caches, command queues, Docker volumes, service state,
    and local `.env` files stay host-local and out of git.
-4. Product validation starts from the canonical 2-week research-value cycle:
+4. Product validation follows the ground goal. Do not use old standalone
+   planning, API, Slack, deployment, architecture, or runtime-operation docs as
+   current direction.
 
-   ```text
-   docs/ceml-ra-2week-research-value-cycle.md
-   ```
-
-The next product step is the Research Question Factory from that cycle, not
-another internal autonomy or status-reporting implementation slice.
+The next product step is Phase 1 from the ground contract: define the
+`research_thread` memory spine and seed parallel threads for
+`materials_ontology_kg` and `rare_earth_magnets`. Do not begin with internal
+autonomy machinery, old mission flows, or status-reporting slices.
 
 ## Read First
 
 1. `.agents/context/HANDOFF.md`
 2. `.agents/context/TASK_LOG.md`
-3. `docs/ceml-ra-2week-research-value-cycle.md`
-4. `docs/artifact-runtime-boundary.md`
-5. `git status --short --branch`
+3. `docs/ceml-ra-ground-goal-and-phases.md`
+4. `git status --short --branch`
 
 ## Source, Artifact, And Runtime Boundaries
 
@@ -72,9 +82,13 @@ another internal autonomy or status-reporting implementation slice.
 ## Development Contract
 
 - Optimize for research value, not observation volume.
+- Preserve the integrated research colleague spirit before adding features.
+- Prefer research-thread memory progress over isolated reports, dashboards, or
+  agent outputs.
 - Prefer one useful research artifact over many status reports.
 - Do not count read-only observation as product progress.
-- Add a new report surface only if it clearly supports the 2-week cycle.
+- Add a new report surface only if it clearly advances a research thread or
+  reuses accumulated memory.
 - Keep API, workers, UI, Scout/RAG/KG, docs, and artifact contracts aligned.
 - Inspect nearby code and docs before editing.
 - Keep changes scoped to the owner area being modified.

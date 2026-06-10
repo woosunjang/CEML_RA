@@ -1,67 +1,66 @@
 # Task Log
 
-## 2026-06-11 — Promoted Stage 0 branch to main ground
+## 2026-06-11 — Collapsed docs to the ground contract
 
-**Status:** Complete.
+**Status:** Complete on `codex/ceml-ra-ground-contract`.
 
-The user asked to make the pushed Stage 0 branch the new main ground. Local
-`main` was fast-forwarded to the Stage 0 cleanup commit, and the live context
-now treats `main` as the canonical source branch.
+After the hard reset, the user asked to remove confusing old documentation and
+stop treating stale local runtime surfaces as product truth.
 
-Remote `main` was pushed, the GitHub default branch was updated to `main`, and
-the old remote codex branches were removed to keep one active ground.
-
-## 2026-06-11 — Purged old live context from the repo
-
-**Status:** Complete in `5a7e1f5`.
-
-**Why:** The main-derived reset was still carrying old planning and audit
-surfaces that made Codex drift back toward prior autonomy-pulse development
-habits. The user approved purging live context items 1-6 while leaving local
-branch/stash deletion for a separate preview and approval.
-
-**Scope approved now:**
-
-1. Remove old tracked schedule plans under `development/schedule_plan/`.
-2. Remove `docs/old-surface-audit-2026-06-10.md`.
-3. Remove `docs/stage0-next-chat-prompt-2026-06-10.md`.
-4. Rewrite `HANDOFF.md` and this `TASK_LOG.md` as short current-state files.
-5. Shrink the main rebuild goal into current source/artifact boundary and next
-   cycle entry guidance.
-6. Add a canonical 2-week research-value cycle document.
-
-**Follow-up completed:** After preview and explicit approval, the old local
-branches `codex/ceml-ra-reset-baseline` and `codex/mission-autonomy-pulse`, plus
-the preserved stash `stage0-context-reset-before-main-switch`, were deleted.
-
-**Canonical next product step:**
+The `docs/` directory now keeps only:
 
 ```text
-Research Question Factory for materials_ontology_kg and rare_earth_magnets
+docs/README.md
+docs/ceml-ra-ground-goal-and-phases.md
 ```
 
-## 2026-06-10 — Completed source/artifact separation
+The standalone operational planning documents were removed. Their
+still-current source, artifact, and runtime rules were folded into the ground
+contract.
+
+## 2026-06-11 — Stopped stale Mac Mini runtime
 
 **Status:** Complete.
 
-Completed Stage 0 infrastructure:
+Runtime cleanup completed:
 
-- Source folder cleaned and reset onto `codex/ceml-ra-stage0-main`.
-- Full pre-cleanup archive preserved at:
+- stale `uvicorn api.server:app` on `127.0.0.1:8000` was terminated;
+- no CEML_RA launchd labels were loaded at cleanup time;
+- CEML_RA-related local service ports `3000`, `8000`, `6333`, `6379`, `7474`,
+  and `7687` were verified closed;
+- Apple `/usr/libexec/watchdogd` was left alone because it is an OS process,
+  not a CEML_RA runtime.
 
-  ```text
-  /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/source_archives/CEML_RA_full_with_gitdir_20260610_220548.tar.gz
-  ```
+Do not restart the stopped Mac Mini runtime unless the user explicitly asks.
 
-- Minimal artifact-root support committed:
-  `CEML_RA_ARTIFACTS_DIR`, `ARTIFACTS_DIR`, generated fallback, docs, and
-  focused tests.
-- Explicit snapshot export helper committed.
-- Git metadata moved into the source folder as internal `.git/`.
-- External gitdir path removed.
-- `core.worktree` absolute-path setting removed.
-- Git GC warning resolved.
+## 2026-06-11 — Added ground goal and phased rebuild contract
 
-**Operational note:** The user may disable Dropbox sync for
-`/Users/woosun/Dropbox/Dev/CEML_RA`. Keep
-`/Users/woosun/Dropbox/Dev/CEML/RA_artifacts` Dropbox-synced.
+**Status:** Complete.
+
+The Phase 0 ground contract is:
+
+```text
+docs/ceml-ra-ground-goal-and-phases.md
+```
+
+It defines CEML_RA as a PhD-level integrated research colleague with long-term
+memory, not an automatic report tool. It fixes the role split between
+`RA_artifacts`, Neo4j + Graphiti, and Qdrant, and makes `research_thread` the
+next memory-spine target.
+
+## 2026-06-10 to 2026-06-11 — Source reset and artifact preservation
+
+**Status:** Complete.
+
+Source was reset onto clean `main`, old live context was purged, and the
+current source tree uses an internal `.git/` directory.
+
+The pre-cleanup source archive remains under the durable artifact root:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/source_archives/CEML_RA_full_with_gitdir_20260610_220548.tar.gz
+```
+
+Keep `/Users/woosun/Dropbox/Dev/CEML/RA_artifacts` as the durable artifact
+location. Live DBs, logs, caches, command queues, service state, and local
+`.env` files stay host-local and out of git.

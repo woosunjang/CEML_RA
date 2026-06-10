@@ -1,7 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** `main` is the clean ground for the 2-week research-value cycle.
+**Status:** `main` is the clean ground for the CEML_RA integrated research
+colleague rebuild. Stale local runtimes were stopped on 2026-06-11 KST.
 
 ## Current Ground
 
@@ -25,27 +26,42 @@ Keep this artifact root Dropbox-synced:
 ## Read First
 
 1. `AGENTS.md`
-2. `docs/ceml-ra-2week-research-value-cycle.md`
-3. `docs/artifact-runtime-boundary.md`
-4. `.agents/context/TASK_LOG.md`
-5. `git status --short --branch`
+2. `docs/ceml-ra-ground-goal-and-phases.md`
+3. `.agents/context/TASK_LOG.md`
+4. `git status --short --branch`
 
 ## Live Direction
 
-Use the 2-week research-value cycle as the canonical product plan. The next
-product step is:
+CEML_RA is being rebuilt as a PhD-level integrated research colleague with
+long-term memory, not as an automatic report tool or status dashboard. The
+ground contract is:
 
 ```text
-Days 1-2: Research Question Factory
+docs/ceml-ra-ground-goal-and-phases.md
 ```
 
-Start by generating fresh, non-template research questions for:
+The next product step is Phase 1:
+
+```text
+Define the research_thread memory spine and seed parallel threads for
+materials_ontology_kg and rare_earth_magnets.
+```
+
+Initial topics remain:
 
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-Do not begin with internal autonomy machinery, old audit findings, old schedule
-plans, or code implementation slices unless the user explicitly redirects.
+Do not begin with internal autonomy machinery, old mission flows, old audit
+findings, old schedule plans, dashboard/status slices, or Sprint Executor
+revival unless the user explicitly redirects.
+
+## Runtime Baseline
+
+The old Mac Mini runtime and watchdog-style surfaces are intentionally stopped.
+Do not infer current product state from a previously open localhost port,
+stale Slack alerts, old launchd plists, or old API docs. Restarting services is
+a future explicit baseline task, not part of the current ground contract.
 
 ## Sealed Historical Material
 
@@ -62,6 +78,7 @@ approval. Historical material remains only in the full archive and Git history.
 - Do not delete local branches or stashes without explicit approval.
 - Do not mutate live DB/KG/RAG/Scout state during planning.
 - Do not restart services during planning or cleanup.
+- Do not restart the stopped Mac Mini runtime unless the user explicitly asks.
 - Do not run Sprint Executor, active mission next-actions, or backlog mutation
   commands by default.
 - Do not count read-only observation as research progress.
