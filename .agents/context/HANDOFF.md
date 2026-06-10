@@ -52,9 +52,12 @@ plan only after Stage 0 is complete.
   Current Stage 0 source should remain clean and main-derived.
 - Stage 0 artifact-root support is committed in `878b2da`:
   `CEML_RA_ARTIFACTS_DIR`, `ARTIFACTS_DIR`, generated fallback, docs, and tests.
-- In-progress Stage 0 work now adds an explicit snapshot export helper. It is
-  dry-run by default and only copies one user-selected file into the artifact
-  root when called with `--execute`.
+- Explicit snapshot export helper is committed in `ba93233`. It is dry-run by
+  default and only copies one user-selected file into the artifact root when
+  called with `--execute`.
+- In-progress Stage 0 work now adds `docs/old-surface-audit-2026-06-10.md`,
+  an index classifying old autonomy-pulse writer/report/probe surfaces before
+  reuse.
 
 ## Guardrails
 
@@ -63,3 +66,4 @@ plan only after Stage 0 is complete.
 - Do not run Sprint Executor or active mission next-actions by default.
 - Do not push without explicit approval.
 - Do not treat read-only observation as research progress.
+- Do not restore old autonomy-pulse surfaces unless they pass the audit gates.

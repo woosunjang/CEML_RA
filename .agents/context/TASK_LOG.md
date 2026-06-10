@@ -1,5 +1,40 @@
 # Task Log
 
+## 2026-06-10 — Audited old autonomy-pulse surfaces before reuse
+
+**Status:** Old-surface audit index added locally and not yet committed.
+
+**What changed:** Added `docs/old-surface-audit-2026-06-10.md`, a Stage 0
+classification of old autonomy-pulse surfaces from the preserved branches:
+
+```text
+codex/ceml-ra-reset-baseline
+codex/mission-autonomy-pulse
+```
+
+The audit was performed read-only with `git diff`, `git ls-tree`, and selected
+`git show` reads. No branch checkout, runtime service mutation, DB/KG/RAG/Scout
+state mutation, or old code restore was performed.
+
+**Decisions captured:**
+
+- `core`: evidence contract/review, minimal mission ledger, eventually a
+  host-local job store.
+- `merge`: one future operator surface, selected KG/RAG/Scout promotion ideas,
+  selected UI ideas after API contracts exist.
+- `dev-diagnostic`: narrow smoke/probe ideas only as developer tools.
+- `remove-candidate`: broad `autonomy_*_report`, `*_packet`, `*_board`,
+  `*_standup`, `*_probe` surfaces, proposal pressure, source-review question
+  machinery, and generated/ops artifacts as product outputs.
+- `hold`: specialist ledgers, launchd workers, KG promotion workers, and
+  project-operator behavior until smaller contracts exist.
+
+**Next recommended Stage 0 implementation slice:**
+
+```text
+evidence_contract + evidence_review + focused tests
+```
+
 ## 2026-06-10 — Added explicit portable snapshot export helper
 
 **Status:** Export helper implemented locally and not yet committed.
