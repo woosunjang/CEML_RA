@@ -50,8 +50,11 @@ plan only after Stage 0 is complete.
   It includes both `CEML_RA/` and external `git_repo/CEML_RA.git/` metadata.
 - The old untracked/runtime leftovers were then removed from the working folder.
   Current Stage 0 source should remain clean and main-derived.
-- In-progress Stage 0 work now adds minimal artifact-root support:
+- Stage 0 artifact-root support is committed in `878b2da`:
   `CEML_RA_ARTIFACTS_DIR`, `ARTIFACTS_DIR`, generated fallback, docs, and tests.
+- In-progress Stage 0 work now adds an explicit snapshot export helper. It is
+  dry-run by default and only copies one user-selected file into the artifact
+  root when called with `--execute`.
 
 ## Guardrails
 

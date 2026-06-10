@@ -65,6 +65,48 @@ explicit snapshot/export command with a manifest describing source path, host,
 timestamp, and export type. Do not move live DB files into Dropbox as a default
 runtime path.
 
+## Explicit Snapshot Export
+
+Use the Stage 0 export helper when a specific file should become a portable
+knowledge snapshot. The command is dry-run by default:
+
+```bash
+python3 lab-orchestrator/tools/export_snapshot.py \
+  --source /path/to/export.jsonl \
+  --kind scout_jsonl \
+  --label scout-export-preview \
+  --artifacts-dir /Users/woosun/Dropbox/Dev/CEML/RA_artifacts
+```
+
+The dry-run prints the planned destination and manifest path but writes
+nothing. Add `--execute` only after reviewing the preview:
+
+```bash
+python3 lab-orchestrator/tools/export_snapshot.py \
+  --source /path/to/export.jsonl \
+  --kind scout_jsonl \
+  --label scout-export-2026-06-10 \
+  --artifacts-dir /Users/woosun/Dropbox/Dev/CEML/RA_artifacts \
+  --execute
+```
+
+Executed exports copy the file under:
+
+```text
+$CEML_RA_ARTIFACTS_DIR/snapshots/<kind>/
+```
+
+and append one JSONL manifest row to:
+
+```text
+$CEML_RA_ARTIFACTS_DIR/manifests/knowledge_snapshots.jsonl
+```
+
+For SQLite snapshots, pass `--include-sidecars` only when the matching `-wal`
+or `-shm` files should be copied with the DB file. The helper exports one
+explicit file at a time and rejects directories to avoid sweeping live runtime
+trees into Dropbox by accident.
+
 ## Current Stage 0 Archive
 
 The pre-cleanup same-folder snapshot is stored outside the source tree:

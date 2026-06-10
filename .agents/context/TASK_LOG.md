@@ -1,5 +1,44 @@
 # Task Log
 
+## 2026-06-10 — Added explicit portable snapshot export helper
+
+**Status:** Export helper implemented locally and not yet committed.
+
+**What changed:** Added a narrow Stage 0 export lane for portable knowledge
+snapshots:
+
+- `lab-orchestrator/integrations/export_manifest.py` plans and executes
+  explicit one-file exports into `ARTIFACTS_DIR/snapshots/<kind>/`.
+- `lab-orchestrator/tools/export_snapshot.py` exposes the helper as a CLI.
+- The CLI is dry-run by default; `--execute` is required before any file is
+  copied or any manifest row is appended.
+- Executed exports append JSONL rows to
+  `ARTIFACTS_DIR/manifests/knowledge_snapshots.jsonl`.
+- SQLite `-wal`/`-shm` sidecars are copied only when `--include-sidecars` is
+  provided.
+- Directories are rejected so live runtime trees cannot be swept into Dropbox
+  by accident.
+
+**Verification:**
+
+```text
+python3 -m py_compile lab-orchestrator/integrations/export_manifest.py lab-orchestrator/tools/export_snapshot.py lab-orchestrator/tests/test_export_manifest.py
+python3 -m unittest discover -s lab-orchestrator/tests -p 'test_export_manifest.py'
+python3 -m unittest discover -s lab-orchestrator/tests -p 'test_config_paths.py'
+python3 -m unittest discover -s lab-orchestrator/tests -p 'test_knowledge_brief.py'
+git diff --check
+```
+
+All focused checks passed. `test_knowledge_brief.py` still emits the existing
+LibreSSL/urllib3 warning and expected disk-I/O fallback warning.
+
+**Next recommended actions for Stage 0:**
+
+1. Commit the export helper.
+2. Add a small old-surface audit index before selectively reusing any
+   autonomy-pulse writer/report/probe code.
+3. Keep actual live DB/Qdrant/Neo4j exports manual and explicit.
+
 ## 2026-06-10 — Archived old folder state and added Stage 0 artifact boundary
 
 **Status:** Source folder cleanup completed; minimal artifact-root contract is
