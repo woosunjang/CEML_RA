@@ -2,15 +2,14 @@
 
 ## 2026-06-11 — Promoted Stage 0 branch to main ground
 
-**Status:** Complete locally; remote `main` push is the final step in this turn.
+**Status:** Complete.
 
 The user asked to make the pushed Stage 0 branch the new main ground. Local
 `main` was fast-forwarded to the Stage 0 cleanup commit, and the live context
 now treats `main` as the canonical source branch.
 
-Remote `main` is pushed as the final promotion step. If possible, the GitHub
-default branch should be updated to `main`, then old remote codex branches
-should be removed to keep one active ground.
+Remote `main` was pushed, the GitHub default branch was updated to `main`, and
+the old remote codex branches were removed to keep one active ground.
 
 ## 2026-06-11 — Purged old live context from the repo
 
