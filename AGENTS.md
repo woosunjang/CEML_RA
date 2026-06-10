@@ -52,7 +52,7 @@ another internal autonomy or status-reporting implementation slice.
 
 ## Git Guardrails
 
-- Current working branch: `codex/ceml-ra-stage0-main`.
+- Canonical source branch: `main`.
 - Do not push without explicit approval.
 - Do not delete local branches or stashes without explicit approval.
 - Do not use old branches or stashes as development context unless the user

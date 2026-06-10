@@ -1,13 +1,12 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Stage 0 source/artifact separation is complete; old live context is
-being purged so the next work starts from the 2-week research-value cycle.
+**Status:** `main` is the clean ground for the 2-week research-value cycle.
 
-## Current Branch
+## Current Ground
 
 ```text
-codex/ceml-ra-stage0-main
+main
 ```
 
 The repo now uses an internal `.git/` directory. The user may disable Dropbox
@@ -54,8 +53,8 @@ Old branches, old stashes, old autonomy-pulse artifacts, old schedule plans,
 old generated/ops reports, and old reset/audit narratives are historical only.
 They should not be read or used as default context.
 
-Local old branches and stash still exist for now and require a separate explicit
-approval before deletion.
+The old local branches and preserved stash were deleted after explicit user
+approval. Historical material remains only in the full archive and Git history.
 
 ## Guardrails
 

@@ -4,10 +4,10 @@
 
 ## Current State
 
-CEML_RA has been reset onto a clean, `main`-derived branch:
+CEML_RA has been reset onto a clean source branch:
 
 ```text
-codex/ceml-ra-stage0-main
+main
 ```
 
 Stage 0 source/artifact separation is complete enough for the user to disable

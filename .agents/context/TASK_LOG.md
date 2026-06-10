@@ -1,8 +1,20 @@
 # Task Log
 
+## 2026-06-11 — Promoted Stage 0 branch to main ground
+
+**Status:** Complete locally; remote `main` push is the final step in this turn.
+
+The user asked to make the pushed Stage 0 branch the new main ground. Local
+`main` was fast-forwarded to the Stage 0 cleanup commit, and the live context
+now treats `main` as the canonical source branch.
+
+Remote `main` is pushed as the final promotion step. If possible, the GitHub
+default branch should be updated to `main`, then old remote codex branches
+should be removed to keep one active ground.
+
 ## 2026-06-11 — Purged old live context from the repo
 
-**Status:** In progress in this commit.
+**Status:** Complete in `5a7e1f5`.
 
 **Why:** The main-derived reset was still carrying old planning and audit
 surfaces that made Codex drift back toward prior autonomy-pulse development
@@ -19,8 +31,9 @@ branch/stash deletion for a separate preview and approval.
    cycle entry guidance.
 6. Add a canonical 2-week research-value cycle document.
 
-**Not yet approved:** Deleting local old branches or the preserved stash. A
-preview should be shown before any branch or stash deletion.
+**Follow-up completed:** After preview and explicit approval, the old local
+branches `codex/ceml-ra-reset-baseline` and `codex/mission-autonomy-pulse`, plus
+the preserved stash `stage0-context-reset-before-main-switch`, were deleted.
 
 **Canonical next product step:**
 
