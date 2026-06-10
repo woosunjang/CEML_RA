@@ -1,9 +1,9 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Test Chunk 2 evidence briefs and idea matrices are implemented on
-`codex/ceml-ra-test-chunk-2-evidence-briefs`. Stale local runtimes were stopped
-on 2026-06-11 KST.
+**Status:** Goal 3 local research partner transcript is implemented on
+`codex/ceml-ra-research-partner-test`. Stale local runtimes were stopped on
+2026-06-11 KST.
 
 ## Current Ground
 
@@ -58,9 +58,9 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step is Goal 3: a local Slack-style research partner
-transcript for one selected idea. Use `idea_rem_hre_sparing_route_ranking` as
-the first selected idea unless the user redirects.
+The next product step is Goal 4: an observed-value automation backlog based on
+the question factory, evidence briefs, idea matrices, and partner-test
+transcript.
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -75,6 +75,12 @@ Test Chunk 2 artifacts:
 
 ```text
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_2_evidence_briefs/
+```
+
+Goal 3 artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_3_partner_transcript/
 ```
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
