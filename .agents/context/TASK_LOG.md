@@ -1,5 +1,35 @@
 # Task Log
 
+## 2026-06-11 — Completed rare-earth magnet proposal-seed readiness
+
+**Status:** Complete on `codex/ceml-ra-proposal-seed-readiness`.
+
+Generated durable source-gap audit and proposal-readiness artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/proposal_seed_readiness/
+```
+
+The pass preserved the route-ranking sheet as prior reviewed memory and did not
+overwrite it. The source-gap audit keeps final GBD Br/BHmax as explicit
+`not_found` fields, confirms Tb-Ga GBD Hcj/process/HRE-content signals, and
+confirms primary recycling values for Br 1.31 T, BHmax 328 kJ/m3, HcJ 1703
+kA/m, renewed GBD with 1.5 wt.% Tb foil, and high-temperature restoration
+signals. Missing data remains a gap, not negative proof.
+
+The readiness artifact keeps FSPS HRE-free and GBD HRE-lean routes in the
+proposal-review lane, digital-twin/ML in calculation-scoping, and recycling as
+supporting circularity context rather than a primary HRE-sparing route. The
+`rare_earth_magnets` research_thread was updated only with reviewed decisions,
+failure modes, and next actions; `materials_ontology_kg` was not changed. No
+Scout DB, Qdrant, Neo4j, Graphiti, Slack, KG/RAG, runtime, or watchdog state was
+mutated.
+
+Next product step: draft a bounded proposal-seed artifact. If the next chunk
+will mutate research_thread again, first add a small reviewable
+`research_thread_patch_cli`, because both route-ranking and proposal-readiness
+needed one-off thread updates.
+
 ## 2026-06-11 — Completed rare-earth magnet route-ranking sheet
 
 **Status:** Complete on `codex/ceml-ra-route-ranking-sheet`.

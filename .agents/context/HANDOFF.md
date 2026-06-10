@@ -1,8 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Rare-earth magnet route-ranking sheet is implemented on
-`codex/ceml-ra-route-ranking-sheet`. Stale local runtimes were stopped on
+**Status:** Rare-earth magnet proposal-seed readiness is implemented on
+`codex/ceml-ra-proposal-seed-readiness`. Stale local runtimes were stopped on
 2026-06-11 KST.
 
 ## Current Ground
@@ -94,6 +94,20 @@ Route-ranking artifacts:
 ```text
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/route_ranking_extraction_sheet/
 ```
+
+Proposal-seed readiness artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/proposal_seed_readiness/
+```
+
+The proposal-seed readiness pass keeps the existing route-ranking sheet as prior
+reviewed memory. It confirms primary recycling values for Br, BHmax, HcJ,
+renewed Tb-foil GBD, and high-temperature property checks, while keeping final
+GBD Br/BHmax as explicit `not_found` source gaps. The next product chunk can be
+a bounded proposal-seed artifact. If the next chunk will mutate research_thread
+again, first add a small reviewable `research_thread_patch_cli`; route-ranking
+and proposal-readiness both needed one-off thread updates.
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
 messages, or writes to Scout DB, Qdrant, Neo4j, or Graphiti for the next chunk.
