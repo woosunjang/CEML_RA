@@ -47,14 +47,14 @@ Scout, evidence synthesis, idea candidate, critique, and next-action stages
 using local artifacts only, and the read-only review API can expose those
 artifacts.
 
-Test Chunk 1 generated Research Question Factory artifacts, Test Chunk 2
-generated evidence briefs and idea matrices, and Goal 3 generated a local
-Slack-style research partner transcript for `idea_rem_hre_sparing_route_ranking`
-without sending Slack messages. The next product step is Goal 4: an
-observed-value automation backlog. KG ingest preview work is deferred until
-these research-value artifacts prove what should be remembered. Do not begin
-with internal autonomy machinery, old mission flows, status-reporting slices,
-Slack, or live KG/RAG writes.
+The post-Chunk-4 validation queue is complete through Goal 4: plan
+realignment, Research Question Factory, evidence briefs, idea matrices, local
+research partner test, and observed-value automation backlog. The next
+recommended implementation slice is an artifact-first route-ranking extraction
+sheet for the rare-earth magnet HRE-sparing idea. KG ingest preview work remains
+deferred until these research-value artifacts prove exactly what should be
+remembered. Do not begin with internal autonomy machinery, old mission flows,
+status-reporting slices, Slack, or live KG/RAG writes.
 
 ## Read First
 

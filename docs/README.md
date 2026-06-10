@@ -36,13 +36,13 @@ using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-Test Chunk 1 generated Research Question Factory artifacts, Test Chunk 2
-generated evidence briefs plus idea matrices, and Goal 3 generated a local
-Slack-style research partner transcript under the durable artifact root. The
-next product target is Goal 4: an observed-value automation backlog. KG ingest
-preview work is deferred until the question factory, evidence brief, idea
-matrix, partner-test, and backlog artifacts show what is worth remembering. It
-must not write to Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
+The post-Chunk-4 validation queue is complete through Goal 4. Durable artifacts
+now cover the Research Question Factory, evidence briefs, idea matrices, local
+research partner test, and observed-value automation backlog. The next product
+target is an artifact-first route-ranking extraction sheet for the rare-earth
+magnet HRE-sparing idea. KG ingest preview work remains deferred until the
+artifact chain shows exactly what is worth remembering. It must not write to
+Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
 
 ## Storage Boundary
 

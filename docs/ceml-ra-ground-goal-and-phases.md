@@ -316,11 +316,11 @@ stages using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-Test Chunk 1 generated Research Question Factory artifacts, Test Chunk 2
-generated evidence briefs plus idea matrices for `materials_ontology_kg` and
-`rare_earth_magnets`, and Goal 3 generated a local Slack-style research partner
-transcript for `idea_rem_hre_sparing_route_ranking`. The next development
-target is Goal 4: an observed-value automation backlog. KG ingest preview work
-is deferred until useful question, evidence-brief, idea-matrix, partner-test,
-and backlog artifacts prove what should be remembered. Do not add live KG/RAG
+The post-Chunk-4 validation queue is complete through Goal 4. Durable artifacts
+now cover the Research Question Factory, evidence briefs, idea matrices, local
+research partner test, and observed-value automation backlog. The next
+development target is an artifact-first route-ranking extraction sheet for the
+rare-earth magnet HRE-sparing idea. KG ingest preview work remains deferred
+until useful question, evidence-brief, idea-matrix, partner-test, backlog, and
+route-ranking artifacts prove what should be remembered. Do not add live KG/RAG
 writes, mutation endpoints, Slack commands, or automation yet.

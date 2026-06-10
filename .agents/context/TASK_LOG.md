@@ -1,5 +1,37 @@
 # Task Log
 
+## 2026-06-11 — Completed Goal 4 observed-value automation backlog
+
+**Status:** Complete on `codex/ceml-ra-automation-backlog`.
+
+Generated an observed-value automation backlog from the question factory,
+evidence briefs, idea matrices, and local partner-test transcript.
+
+Artifact root:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_4_automation_backlog/
+```
+
+The top-ranked next implementation slice is:
+
+```text
+codex/ceml-ra-route-ranking-sheet
+```
+
+Goal objective:
+
+```text
+Implement an artifact-first route-ranking extraction sheet for rare-earth
+magnet HRE-sparing ideas, using local artifacts only and no live runtime or
+KG/RAG/Scout/Slack mutations.
+```
+
+KG ingest preview remains deferred and should only be implemented as a
+preview-only artifact after the route-ranking/evidence-matrix workflow proves
+which fields are worth structuring. No Scout DB, Qdrant, Neo4j, Graphiti,
+Slack, or runtime services were mutated.
+
 ## 2026-06-11 — Completed Goal 3 local research partner test
 
 **Status:** Complete on `codex/ceml-ra-research-partner-test`.

@@ -1,8 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Goal 3 local research partner transcript is implemented on
-`codex/ceml-ra-research-partner-test`. Stale local runtimes were stopped on
+**Status:** Goal 0 through Goal 4 are complete on
+`codex/ceml-ra-automation-backlog`. Stale local runtimes were stopped on
 2026-06-11 KST.
 
 ## Current Ground
@@ -58,9 +58,12 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step is Goal 4: an observed-value automation backlog based on
-the question factory, evidence briefs, idea matrices, and partner-test
-transcript.
+The next recommended implementation slice is an artifact-first route-ranking
+extraction sheet for the rare-earth magnet HRE-sparing idea:
+
+```text
+codex/ceml-ra-route-ranking-sheet
+```
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -81,6 +84,12 @@ Goal 3 artifacts:
 
 ```text
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_3_partner_transcript/
+```
+
+Goal 4 artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/test_chunk_4_automation_backlog/
 ```
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
