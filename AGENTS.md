@@ -40,10 +40,11 @@ The live direction is:
    current direction.
 
 The Phase 1 core memory spine now exists as durable `research_thread` JSON and
-Markdown artifacts. The next product step is the Scout evidence adapter:
-convert read-only Scout paper evidence into `research_thread` source signals
-and evidence previews. Do not begin with internal autonomy machinery, old
-mission flows, status-reporting slices, UI, Slack, or KG/RAG writes.
+Markdown artifacts, and the Scout evidence adapter can convert read-only Scout
+paper metadata into `research_thread` source signals and evidence previews.
+The next product step is the Coordinator dry-run loop using local artifacts
+only. Do not begin with internal autonomy machinery, old mission flows,
+status-reporting slices, UI, Slack, or KG/RAG writes.
 
 ## Read First
 

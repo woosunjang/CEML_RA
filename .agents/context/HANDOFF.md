@@ -1,8 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Phase 1 core `research_thread` memory spine is implemented on
-`codex/ceml-ra-research-thread-core`. Stale local runtimes were stopped on
+**Status:** Scout evidence to `research_thread` adapter is implemented on
+`codex/ceml-ra-scout-thread-adapter`. Stale local runtimes were stopped on
 2026-06-11 KST.
 
 ## Current Ground
@@ -41,11 +41,13 @@ ground contract is:
 docs/ceml-ra-ground-goal-and-phases.md
 ```
 
-The Phase 1 core memory-spine implementation is:
+The Phase 1 memory-spine implementation is:
 
 ```text
 lab-orchestrator/orchestrator/research_thread.py
 lab-orchestrator/tools/seed_research_threads.py
+lab-orchestrator/orchestrator/scout_thread_adapter.py
+lab-orchestrator/tools/scout_evidence_to_thread.py
 ```
 
 Initial topics remain:
@@ -53,9 +55,12 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step is Chunk 2: convert read-only Scout paper evidence into
-research_thread source signals and evidence previews. Do not mutate Scout DB,
-Qdrant, Neo4j, Graphiti, or Slack for that chunk.
+The next product step is Chunk 3: implement a Coordinator dry-run loop that
+updates a research_thread through scout, evidence synthesis, idea candidate,
+critique, and next-action stages using local artifacts only.
+
+Do not mutate Scout DB, Qdrant, Neo4j, Graphiti, Slack, or runtime services for
+the next chunk.
 
 Do not begin with internal autonomy machinery, old mission flows, old audit
 findings, old schedule plans, dashboard/status slices, or Sprint Executor

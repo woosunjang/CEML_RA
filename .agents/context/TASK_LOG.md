@@ -1,5 +1,27 @@
 # Task Log
 
+## 2026-06-11 — Implemented Scout evidence to research_thread adapter
+
+**Status:** Complete on `codex/ceml-ra-scout-thread-adapter`.
+
+The Chunk 2 adapter converts read-only Scout paper metadata into
+`research_thread` source signals and evidence previews.
+
+Implementation:
+
+```text
+lab-orchestrator/orchestrator/scout_thread_adapter.py
+lab-orchestrator/tools/scout_evidence_to_thread.py
+lab-orchestrator/tests/test_scout_thread_adapter.py
+```
+
+The CLI defaults to dry-run. `--execute` updates only the existing
+research_thread JSON and Markdown artifacts. It does not mutate Scout DB,
+Qdrant, Neo4j, Graphiti, Slack, or runtime services.
+
+Next product step: Chunk 3, Coordinator dry-run loop using local artifacts
+only.
+
 ## 2026-06-11 — Implemented Phase 1 research_thread core
 
 **Status:** Complete on `codex/ceml-ra-research-thread-core`.

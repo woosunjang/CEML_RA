@@ -25,9 +25,13 @@ research_thread JSON + Markdown artifacts under
 ${CEML_RA_ARTIFACTS_DIR:-generated}/research_threads/
 ```
 
-The next product target is the Scout evidence adapter: convert read-only Scout
-paper evidence into research_thread source signals and evidence previews
-without mutating Scout DB, Qdrant, Neo4j, Graphiti, or Slack.
+The Scout evidence adapter now converts read-only Scout paper metadata into
+research_thread source signals and evidence previews without mutating Scout DB,
+Qdrant, Neo4j, Graphiti, or Slack.
+
+The next product target is the Coordinator dry-run loop: update a
+research_thread through scout, evidence synthesis, idea candidate, critique,
+and next-action stages using local artifacts only.
 
 ## Storage Boundary
 
