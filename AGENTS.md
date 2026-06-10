@@ -3,83 +3,62 @@
 These instructions are for Codex while developing this repository. They are not
 runtime prompts for the application's internal agents.
 
-## Current Operating Direction
+## Current Direction
 
-CEML_RA is being reset for a cleaner, main-derived rebuild.
+CEML_RA has been reset from `main` for a clean rebuild.
 
-Do not treat the old autonomy-pulse branch, old mission IDs, Sprint Executor
-next actions, proposal backlog pressure, or generated/ops report artifacts as
-the default development direction. They are historical reference only.
+Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
+proposal backlog pressure, generated/ops artifacts, old schedule plans, and
+old audit documents as sealed historical material. Do not inspect, restore,
+reuse, cherry-pick, or summarize them unless the user explicitly asks for a
+specific artifact.
 
-The near-term goal is not the two-week research-value feature cycle itself. The
-near-term goal is to make that cycle possible by first completing repository and
-storage cleanup:
+The live direction is:
 
-1. Separate source code from Dropbox sync and use GitHub as code source of
-   truth.
-2. Keep durable artifacts and portable knowledge snapshots under a Dropbox
-   artifact root.
-3. Keep live runtime state host-local.
-4. Continue from this `main`-derived Stage 0 branch.
-5. Audit old read-only writer/report/probe surfaces before reusing them.
+1. GitHub is the source of truth for source code.
+2. Durable artifacts and portable knowledge snapshots live under:
 
-Read first:
+   ```text
+   /Users/woosun/Dropbox/Dev/CEML/RA_artifacts
+   ```
+
+3. Live databases, logs, caches, command queues, Docker volumes, service state,
+   and local `.env` files stay host-local and out of git.
+4. Product validation starts from the canonical 2-week research-value cycle:
+
+   ```text
+   docs/ceml-ra-2week-research-value-cycle.md
+   ```
+
+The next product step is the Research Question Factory from that cycle, not
+another internal autonomy or status-reporting implementation slice.
+
+## Read First
 
 1. `.agents/context/HANDOFF.md`
 2. `.agents/context/TASK_LOG.md`
-3. `docs/ceml-ra-main-rebuild-development-goal-2026-06-10.md`
-4. `git status --short --branch`
-
-## Agent Harness
-
-Use the lightweight agent harness when it helps, but do not let old harness
-history override the reset direction.
-
-- Non-trivial work: use `.agents/harness/quick-check.md` internally when it is
-  present and relevant.
-- Large, risky, multi-component, KG/RAG, Scout, Slack, API, worker, deployment,
-  or research-evidence work: use a change-plan pass before implementation.
-- Operational, launchd, DB, Docker, `.env`, Slack, or deployment work: perform
-  narrow guard checks first.
-- Handoff updates should stay short. Long runtime narratives should not be
-  reintroduced into live context files.
+3. `docs/ceml-ra-2week-research-value-cycle.md`
+4. `docs/artifact-runtime-boundary.md`
+5. `git status --short --branch`
 
 ## Source, Artifact, And Runtime Boundaries
 
-GitHub should be the source of truth for code.
+- Use `CEML_RA_ARTIFACTS_DIR` for the artifact root when running code that
+  should write durable artifacts.
+- Keep the in-repo `generated/` fallback for local development and tests.
+- Snapshot/export operations must be explicit, reviewable, and non-destructive.
+- Do not move live SQLite, Neo4j, Qdrant, Scout DBs, logs, caches, queues, or
+  service state into Dropbox.
 
-Dropbox should sync durable artifacts and portable knowledge snapshots only.
-The planned artifact root is:
+## Git Guardrails
 
-```text
-/Users/woosun/Dropbox/Dev/CEML/RA_artifacts
-```
-
-Live databases, logs, caches, command queues, Docker volumes, service state,
-and local `.env` files must stay out of Dropbox sync and out of git.
-
-The rebuild should reintroduce only minimal artifact-root support first:
-
-- external env var: `CEML_RA_ARTIFACTS_DIR`
-- internal constant: `ARTIFACTS_DIR`
-- fallback to in-repo `generated/` when the env var is unset
-- focused tests for path resolution and fallback behavior
-- documentation that distinguishes source, artifacts, live runtime data, and
-  exported snapshots
-
-Do not migrate every old read-only writer into the artifact root. Old writers
-must be audited before reuse.
-
-## Git And Worktree Guardrails
-
-- This branch is intended to be the same-folder, main-derived Stage 0 branch.
-- Treat old branches as reference archives unless explicitly told otherwise.
+- Current working branch: `codex/ceml-ra-stage0-main`.
 - Do not push without explicit approval.
-- Do not run destructive git commands unless explicitly requested.
-- Do not revert user or previous-session changes unless explicitly requested.
-- Keep commits small and intentional.
-- Never commit secrets, local environment files, DBs, logs, caches, generated
-  runtime artifacts, command queues, or conflict copies.
+- Do not delete local branches or stashes without explicit approval.
+- Do not use old branches or stashes as development context unless the user
+  explicitly asks.
+- Never commit secrets, local environment files, databases, logs, generated
+  runtime artifacts, caches, command queues, or conflict copies.
 
 ## Runtime And Operations Guardrails
 
@@ -87,15 +66,15 @@ must be audited before reuse.
 - Do not mutate live DB/KG/RAG/Scout state during planning or baseline setup.
 - Do not run Sprint Executor, active mission next-actions, or backlog mutation
   commands by default.
-- Do not place live SQLite, Neo4j, Qdrant, or Scout databases in Dropbox.
-- Snapshot/export commands must be explicit, reviewable, and non-destructive.
+- Do not block API or Slack handlers with long-running work; prefer queues,
+  workers, bounded memory, and artifact references.
 
 ## Development Contract
 
 - Optimize for research value, not observation volume.
-- Prefer one useful artifact over many status reports.
+- Prefer one useful research artifact over many status reports.
 - Do not count read-only observation as product progress.
-- Add a new report surface only if it replaces or consolidates an older one.
+- Add a new report surface only if it clearly supports the 2-week cycle.
 - Keep API, workers, UI, Scout/RAG/KG, docs, and artifact contracts aligned.
 - Inspect nearby code and docs before editing.
 - Keep changes scoped to the owner area being modified.
@@ -118,8 +97,8 @@ must be audited before reuse.
 
 ## Verification
 
-- For backend changes, run focused Python compile checks and relevant unit tests
-  when available.
+- For backend changes, run focused Python compile checks and relevant unit
+  tests when available.
 - For path/storage changes, verify env-var path resolution and fallback
   behavior.
 - For plist changes, run `plutil -lint`.

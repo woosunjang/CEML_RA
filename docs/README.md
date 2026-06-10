@@ -75,4 +75,5 @@ curl -X POST http://192.168.0.12:8000/chat \
 | [architecture.md](architecture.md) | 시스템 아키텍처 상세 |
 | [deployment.md](deployment.md) | M2 맥미니 배포·운영 가이드 |
 | [artifact-runtime-boundary.md](artifact-runtime-boundary.md) | Stage 0 source/artifact/runtime storage boundary |
-| [old-surface-audit-2026-06-10.md](old-surface-audit-2026-06-10.md) | Stage 0 audit of old autonomy-pulse surfaces before reuse |
+| [ceml-ra-2week-research-value-cycle.md](ceml-ra-2week-research-value-cycle.md) | Canonical 2-week research-value validation cycle |
+| [ceml-ra-main-rebuild-development-goal-2026-06-10.md](ceml-ra-main-rebuild-development-goal-2026-06-10.md) | Current main-derived rebuild goal and storage boundary |
