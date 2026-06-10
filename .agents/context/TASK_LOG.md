@@ -1,5 +1,30 @@
 # Task Log
 
+## 2026-06-11 — Implemented read-only research_thread review API
+
+**Status:** Complete on `codex/ceml-ra-thread-review-api`.
+
+The Chunk 4 API exposes research_thread artifacts through read-only endpoints:
+
+```text
+GET /research/threads
+GET /research/threads/{thread_id}
+GET /research/threads/{thread_id}/markdown
+```
+
+No POST, PUT, or DELETE mutation endpoints were added.
+
+Implementation:
+
+```text
+lab-orchestrator/api/server.py
+lab-orchestrator/tests/test_research_thread_api.py
+```
+
+Next product step: KG ingest preview artifact from research_thread evidence,
+decisions, and next actions. Do not write to live Neo4j, Graphiti, Qdrant,
+Scout DB, Slack, or runtime services.
+
 ## 2026-06-11 — Implemented Coordinator dry-run loop
 
 **Status:** Complete on `codex/ceml-ra-coordinator-dry-run`.

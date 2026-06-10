@@ -44,9 +44,11 @@ Markdown artifacts, and the Scout evidence adapter can convert read-only Scout
 paper metadata into `research_thread` source signals and evidence previews.
 The Coordinator dry-run loop can now update research_thread artifacts through
 Scout, evidence synthesis, idea candidate, critique, and next-action stages
-using local artifacts only. The next product step is the read-only review
-surface for research_thread artifacts. Do not begin with internal autonomy
-machinery, old mission flows, status-reporting slices, Slack, or KG/RAG writes.
+using local artifacts only, and the read-only review API can expose those
+artifacts. The next product step is a KG ingest preview artifact generated from
+research_thread evidence, decisions, and next actions. Do not begin with
+internal autonomy machinery, old mission flows, status-reporting slices, Slack,
+or live KG/RAG writes.
 
 ## Read First
 

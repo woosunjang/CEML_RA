@@ -33,9 +33,12 @@ The Coordinator dry-run loop now updates research_thread artifacts through
 Scout, evidence synthesis, idea candidate, critique, and next-action stages
 using local artifacts only.
 
-The next product target is the read-only review surface: expose
-research_thread artifacts through API endpoints so UI and Slack can later share
-the same memory spine.
+The read-only review API now exposes research_thread artifacts so UI and Slack
+can later share the same memory spine.
+
+The next product target is a KG ingest preview artifact generated from
+research_thread evidence, decisions, and next actions. It must not write to
+Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
 
 ## Storage Boundary
 

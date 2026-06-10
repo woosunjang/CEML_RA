@@ -6,6 +6,8 @@ Receives chat requests, runs orchestration, returns responses.
 """
 
 import logging
+import json
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -13,7 +15,7 @@ from typing import Optional
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from fastapi import Body, FastAPI
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from orchestrator.schemas import ChatRequest, ChatResponse
@@ -24,6 +26,8 @@ from agents.registry import registry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+SAFE_THREAD_ID = re.compile(r"^[0-9A-Za-z._-]+$")
 
 app = FastAPI(
     title="CEML Lab Orchestrator",
@@ -114,6 +118,80 @@ async def delete_session(conversation_id: str):
     """Delete a conversation session."""
     memory_store.delete(conversation_id)
     return {"status": "deleted", "conversation_id": conversation_id}
+
+
+# ---- Research Threads (read-only artifact review) ----
+
+def _validate_research_thread_id(thread_id: str) -> str:
+    if not SAFE_THREAD_ID.fullmatch(thread_id):
+        raise HTTPException(status_code=400, detail="Invalid research_thread id")
+    return thread_id
+
+
+@app.get("/research/threads")
+async def list_research_thread_artifacts():
+    """List available research_thread artifacts from the configured artifact root."""
+    from orchestrator.research_thread import list_research_threads, research_threads_dir, resolve_artifacts_dir
+
+    threads = list_research_threads()
+    return {
+        "threads": threads,
+        "count": len(threads),
+        "artifacts_dir": str(resolve_artifacts_dir()),
+        "research_threads_dir": str(research_threads_dir()),
+        "read_only": True,
+    }
+
+
+@app.get("/research/threads/{thread_id}")
+async def get_research_thread_artifact(thread_id: str):
+    """Load one research_thread JSON artifact."""
+    from orchestrator.research_thread import load_research_thread, research_thread_paths
+
+    thread_id = _validate_research_thread_id(thread_id)
+    paths = research_thread_paths(thread_id)
+    try:
+        thread = load_research_thread(thread_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        "thread": thread,
+        "json_path": str(paths.json_path),
+        "markdown_path": str(paths.markdown_path),
+        "read_only": True,
+    }
+
+
+@app.get("/research/threads/{thread_id}/markdown")
+async def get_research_thread_markdown(thread_id: str):
+    """Load one research_thread Markdown artifact, rendering from JSON if needed."""
+    from orchestrator.research_thread import load_research_thread, render_research_thread_markdown, research_thread_paths
+
+    thread_id = _validate_research_thread_id(thread_id)
+    paths = research_thread_paths(thread_id)
+    try:
+        thread = load_research_thread(thread_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if paths.markdown_path.exists():
+        markdown = paths.markdown_path.read_text(encoding="utf-8")
+        source = "artifact"
+    else:
+        markdown = render_research_thread_markdown(thread)
+        source = "rendered_from_json"
+
+    return {
+        "thread_id": thread_id,
+        "markdown": markdown,
+        "markdown_path": str(paths.markdown_path),
+        "source": source,
+        "read_only": True,
+    }
 
 
 @app.get("/workspaces")

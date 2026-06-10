@@ -1,8 +1,8 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Coordinator dry-run loop is implemented on
-`codex/ceml-ra-coordinator-dry-run`. Stale local runtimes were stopped on
+**Status:** Read-only research_thread review API is implemented on
+`codex/ceml-ra-thread-review-api`. Stale local runtimes were stopped on
 2026-06-11 KST.
 
 ## Current Ground
@@ -50,6 +50,7 @@ lab-orchestrator/orchestrator/scout_thread_adapter.py
 lab-orchestrator/tools/scout_evidence_to_thread.py
 lab-orchestrator/orchestrator/research_coordinator.py
 lab-orchestrator/tools/research_coordinator_dry_run.py
+lab-orchestrator/api/server.py
 ```
 
 Initial topics remain:
@@ -57,11 +58,11 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step is Chunk 4: expose research_thread artifacts through
-read-only API endpoints so UI and Slack can later share the same memory spine.
+The next product step is a KG ingest preview artifact generated from
+research_thread evidence, decisions, and next actions.
 
-Do not add mutation endpoints, restart runtime services, send Slack messages,
-or write to Scout DB, Qdrant, Neo4j, or Graphiti for the next chunk.
+Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
+messages, or writes to Scout DB, Qdrant, Neo4j, or Graphiti for the next chunk.
 
 Do not begin with internal autonomy machinery, old mission flows, old audit
 findings, old schedule plans, dashboard/status slices, or Sprint Executor

@@ -313,7 +313,9 @@ The Coordinator dry-run loop now improves the same durable research threads
 through Scout, evidence synthesis, idea candidate, critique, and next-action
 stages using local artifacts only.
 
-The next development target is the read-only review surface: expose
-research_thread artifacts through API endpoints so UI and Slack can later share
-the same memory spine. Do not add mutation endpoints, Slack commands, KG/RAG
-writes, or automation yet.
+The read-only review API now exposes research_thread artifacts so UI and Slack
+can later share the same memory spine.
+
+The next development target is a KG ingest preview artifact generated from
+research_thread evidence, decisions, and next actions. Do not add live KG/RAG
+writes, mutation endpoints, Slack commands, or automation yet.
