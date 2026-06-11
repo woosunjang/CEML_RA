@@ -47,15 +47,16 @@ Scout, evidence synthesis, idea candidate, critique, and next-action stages
 using local artifacts only, and the read-only review API can expose those
 artifacts.
 
-The post-Chunk-4 validation queue is complete through Goal 4, and the
-artifact-first route-ranking extraction sheet for the rare-earth magnet
-HRE-sparing idea now exists. The next small product decision is whether to fill
-the remaining GBD/recycling source-value gaps for proposal seeding or first add
-a reviewable `research_thread` patch CLI if another thread-writing artifact is
-needed. KG ingest preview work remains deferred until these research-value
-artifacts prove exactly what should be remembered. Do not begin with internal
-autonomy machinery, old mission flows, status-reporting slices, Slack, or live
-KG/RAG writes.
+The post-Chunk-4 validation queue is complete through Goal 4, the
+artifact-first route-ranking extraction sheet exists, and the rare-earth magnet
+proposal-seed readiness pass has filled the next source-value gaps without
+overwriting the prior route-ranking memory. The next product step can be a
+bounded proposal-seed artifact. If another thread-mutating artifact chunk comes
+first, add a small reviewable `research_thread_patch_cli` before continuing.
+KG ingest preview work remains deferred until these research-value artifacts
+prove exactly what should be remembered. Do not begin with internal autonomy
+machinery, old mission flows, status-reporting slices, Slack, or live KG/RAG
+writes.
 
 ## Read First
 
@@ -72,6 +73,26 @@ KG/RAG writes.
 - Snapshot/export operations must be explicit, reviewable, and non-destructive.
 - Do not move live SQLite, Neo4j, Qdrant, Scout DBs, logs, caches, queues, or
   service state into Dropbox.
+
+## Agent Surface Boundaries
+
+- `AGENTS.md` is the canonical repo-local instruction surface for Codex and
+  other development agents.
+- `GEMINI.md` must not carry a separate product roadmap, runtime plan, stale
+  project tree, or schedule. Keep it as a pointer back to `AGENTS.md` unless
+  the user explicitly asks for Gemini-specific instructions.
+
+## Artifact Language Policy
+
+- User-readable research and product artifacts should be written in Korean by
+  default. This includes Markdown narratives, evidence briefs, idea matrices,
+  proposal seeds, review summaries, and local Slack-style transcripts.
+- Machine-oriented structure can remain English: JSON schema keys, stable IDs,
+  route IDs, source IDs, CLI flags, API names, code, tests, logs, and runtime or
+  operations files.
+- For Markdown/JSON artifact pairs, prefer Korean for the Markdown and other
+  user-facing narrative strings while keeping stable machine keys and IDs in
+  English.
 
 ## Git Guardrails
 
