@@ -15,7 +15,7 @@ main
 `main` and `origin/main` currently point to the same promoted cleanup target:
 
 ```text
-a5de04b docs: update remote environment workflow
+6cef734 docs: record branch cleanup
 ```
 
 The repo now uses an internal `.git/` directory. The user may disable Dropbox
