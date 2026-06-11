@@ -10,6 +10,8 @@ agent surface unless the user explicitly asks for one.
 - CEML_RA is being rebuilt as a PhD-level integrated research colleague with
   long-term memory, not as an automatic report tool or status dashboard.
 - The product ground contract is `docs/ceml-ra-ground-goal-and-phases.md`.
+- The loop-level operating contract is
+  `docs/ceml-ra-research-loop-contract-v1.md`.
 - Current source of truth for source code is GitHub.
 - Durable artifacts and portable knowledge snapshots live under:
 
@@ -49,7 +51,8 @@ agent surface unless the user explicitly asks for one.
 2. `.agents/context/TASK_LOG.md`
 3. `.agents/context/REMOTE_ENVIRONMENT.md`
 4. `docs/ceml-ra-ground-goal-and-phases.md`
-5. `git status --short --branch`
+5. `docs/ceml-ra-research-loop-contract-v1.md`
+6. `git status --short --branch`
 
 ## Storage And Runtime Boundaries
 

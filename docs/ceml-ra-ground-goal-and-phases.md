@@ -174,6 +174,15 @@ as:
 Each subagent must update or use the same research thread. Independent agent
 outputs that do not feed memory are not product progress.
 
+The current loop-level operating contract is:
+
+```text
+docs/ceml-ra-research-loop-contract-v1.md
+```
+
+That contract defines how automatic and on-demand research loops share
+`research_thread` memory before additional surfaces or automation are added.
+
 ## Phases
 
 ### Phase 0: Spirit And Ground Contract

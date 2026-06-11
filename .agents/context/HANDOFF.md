@@ -1,7 +1,7 @@
 # Handoff
 
 **Updated:** 2026-06-12 KST
-**Current checkout:** `codex/ceml-ra-work-package-planner`
+**Current checkout:** `codex/ceml-ra-research-loop-contract`
 
 ## Start Here
 
@@ -15,8 +15,9 @@ Read in this order:
 2. `.agents/context/TASK_LOG.md`
 3. `.agents/context/REMOTE_ENVIRONMENT.md`
 4. `docs/ceml-ra-ground-goal-and-phases.md`
-5. `git status --short --branch`
-6. `git log --oneline --decorate --graph --all -30`
+5. `docs/ceml-ra-research-loop-contract-v1.md`
+6. `git status --short --branch`
+7. `git log --oneline --decorate --graph --all -30`
 
 ## Current Direction Boundary
 
@@ -32,11 +33,8 @@ clean context before feature work.
 
 ## Open Cleanup TODO
 
-- Promote or otherwise settle the current linear branch stack before more
-  feature work:
-  - `main`
-  - `codex/ceml-ra-proposal-seed-artifact`
-  - `codex/ceml-ra-work-package-planner`
+- The prior linear branch stack has been promoted to `main`, pushed to GitHub,
+  and local checkpoint branches were removed with normal `git branch -d`.
 - Clean Codex memory Markdown/index files when the environment permits direct
   memory maintenance:
   - `/Users/woosun/.codex/memories/memory_summary.md`
@@ -45,6 +43,13 @@ clean context before feature work.
   autonomy/runtime work, rare-earth proposal follow-ons, HRE table suggestions,
   descriptor table suggestions, and Work Package Planner output as an implied
   next step.
+
+## Next Design Focus
+
+Use `docs/ceml-ra-research-loop-contract-v1.md` to choose the next code boundary.
+The preferred next implementation should make Coordinator/subagent outputs flow
+back into `research_thread` patch previews or durable artifacts. Do not start by
+writing another rare-earth research artifact.
 
 ## Boundaries
 

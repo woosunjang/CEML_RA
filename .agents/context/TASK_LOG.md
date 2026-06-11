@@ -1,5 +1,33 @@
 # Task Log
 
+## 2026-06-12 — Promoted baseline and drafted Research Loop Contract v1
+
+**Status:** Complete on `codex/ceml-ra-research-loop-contract`.
+
+Promoted the linear cleanup stack through:
+
+```text
+ae1cdc1 docs: prioritize repo-local context over stale memory
+```
+
+`main` and `origin/main` now point to that baseline. The merged local checkpoint
+branches were removed with normal `git branch -d`:
+
+```text
+codex/ceml-ra-thread-patch-cli
+codex/ceml-ra-proposal-seed-artifact
+codex/ceml-ra-work-package-planner
+```
+
+Created `docs/ceml-ra-research-loop-contract-v1.md` to define how automatic and
+on-demand research modes share `research_thread` memory, how Coordinator should
+delegate to Scout, Literature/RAG, KG Memory, Evidence Critic, Writing, and
+Project roles, and how loop outputs should return as patch previews, durable
+artifacts, or explicit stop conditions.
+
+No new rare-earth research artifact was created. No Slack, runtime, Scout DB,
+Qdrant, Neo4j, Graphiti, KG/RAG, or durable artifact root state was mutated.
+
 ## 2026-06-12 — Tightened repo-local context against stale Codex memory
 
 **Status:** Complete on `codex/ceml-ra-work-package-planner`.

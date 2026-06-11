@@ -5,9 +5,10 @@ This directory is a small index for current repo-local project truth.
 Read first:
 
 1. [CEML_RA Ground Goal And Phased Rebuild](ceml-ra-ground-goal-and-phases.md)
-2. [Repo operating instructions](../AGENTS.md)
-3. [Current handoff](../.agents/context/HANDOFF.md)
-4. [Task log](../.agents/context/TASK_LOG.md)
+2. [Research Loop Contract v1](ceml-ra-research-loop-contract-v1.md)
+3. [Repo operating instructions](../AGENTS.md)
+4. [Current handoff](../.agents/context/HANDOFF.md)
+5. [Task log](../.agents/context/TASK_LOG.md)
 
 ## Direction Boundary
 
@@ -19,6 +20,10 @@ or stale Codex global memory.
 Recent research artifacts, proposal artifacts, and planner outputs are
 available context only. They are not an implied roadmap. Choose the next product
 step from the current repo-local files and the user's latest instruction.
+
+The Research Loop Contract defines how automatic and on-demand research modes
+should share the same `research_thread` memory before more surfaces or
+automation are added.
 
 ## Storage Boundary
 
