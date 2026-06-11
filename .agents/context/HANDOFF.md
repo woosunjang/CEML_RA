@@ -1,7 +1,7 @@
 # Handoff
 
 **Updated:** 2026-06-12 KST
-**Current checkout:** `codex/ceml-ra-loop-packet`
+**Current checkout:** `codex/ceml-ra-subagent-output-envelope`
 
 ## Start Here
 
@@ -46,15 +46,15 @@ clean context before feature work.
 
 ## Current Code Boundary
 
-`Research Loop Packet v1` now turns a selected `research_thread`, trigger
-context, candidate subagent roles, expected outputs, stop conditions, artifact
+`Research Loop Packet v1` turns a selected `research_thread`, trigger context,
+candidate subagent roles, expected outputs, stop conditions, artifact
 candidates, and thread patch preview into dry-run-first Markdown/JSON planning
 artifacts.
 
-The next likely code boundary is a subagent output envelope that lets Scout,
-Literature/RAG, Evidence Critic, Writing, Project, and KG Memory return results
-to Coordinator in a shared shape. Do not start by writing another rare-earth
-research artifact.
+`Subagent Output Envelope v1` lets a selected loop-packet role return an
+explicitly supplied, Korean-first, reviewable JSON/Markdown envelope plus a
+thread patch preview. It does not execute subagents, call LLMs, create research
+claims, mutate `research_thread`, or touch live stores.
 
 ## Boundaries
 

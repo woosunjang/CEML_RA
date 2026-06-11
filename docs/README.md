@@ -25,9 +25,13 @@ The Research Loop Contract defines how automatic and on-demand research modes
 should share the same `research_thread` memory before more surfaces or
 automation are added.
 
-`lab-orchestrator/tools/research_loop_packet_plan.py` is the current dry-run
-entrypoint for planning one research loop without writing research content or
-mutating live stores.
+Current dry-run entrypoints:
+
+- `lab-orchestrator/tools/research_loop_packet_plan.py` plans one research loop
+  without writing research content or mutating live stores.
+- `lab-orchestrator/tools/subagent_output_envelope_plan.py` turns a selected
+  loop-packet role output into a reviewable envelope and thread patch preview
+  without executing subagents or mutating live stores.
 
 ## Storage Boundary
 

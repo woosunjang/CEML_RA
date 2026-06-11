@@ -1,5 +1,29 @@
 # Task Log
 
+## 2026-06-12 — Implemented Subagent Output Envelope v1
+
+**Status:** Complete on `codex/ceml-ra-subagent-output-envelope`.
+
+Promoted `Research Loop Packet v1` to `main`, pushed GitHub `main` to
+`0a5b274`, and deleted the merged local `codex/ceml-ra-loop-packet` branch with
+normal `git branch -d`.
+
+Implemented a dry-run-first envelope for returning selected loop-packet role
+outputs to Coordinator:
+
+```text
+lab-orchestrator/orchestrator/subagent_output_envelope.py
+lab-orchestrator/tools/subagent_output_envelope_plan.py
+lab-orchestrator/tests/test_subagent_output_envelope.py
+```
+
+The envelope accepts a Research Loop Packet JSON path, selected role, output
+type, and explicitly supplied Korean-first summary/review notes. It writes only
+with `--execute`, produces JSON/Markdown plus a thread patch preview, and keeps
+`live_store_mutations: []`. It does not execute subagents, call LLMs, create
+research claims, mutate `research_thread`, or touch Slack, runtime services,
+Scout DB, Qdrant, Neo4j, Graphiti, KG, or RAG stores.
+
 ## 2026-06-12 — Implemented Research Loop Packet v1
 
 **Status:** Complete on `codex/ceml-ra-loop-packet`.
