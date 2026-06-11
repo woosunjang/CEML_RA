@@ -1,14 +1,21 @@
 # Handoff
 
 **Updated:** 2026-06-11 KST
-**Status:** Rare-earth magnet proposal-seed readiness is implemented on
-`codex/ceml-ra-proposal-seed-readiness`. Stale local runtimes were stopped on
-2026-06-11 KST.
+**Status:** `main` is the current ground branch and has been fast-forwarded to
+the proposal-seed readiness state. Intermediate local `codex/ceml-ra-*` chunk
+branches were cleaned after `origin/main` was updated. Stale local runtimes were
+stopped on 2026-06-11 KST.
 
 ## Current Ground
 
 ```text
 main
+```
+
+`main` and `origin/main` currently point to the same promoted cleanup target:
+
+```text
+a5de04b docs: update remote environment workflow
 ```
 
 The repo now uses an internal `.git/` directory. The user may disable Dropbox
@@ -27,9 +34,10 @@ Keep this artifact root Dropbox-synced:
 ## Read First
 
 1. `AGENTS.md`
-2. `docs/ceml-ra-ground-goal-and-phases.md`
-3. `.agents/context/TASK_LOG.md`
-4. `git status --short --branch`
+2. `.agents/context/TASK_LOG.md`
+3. `.agents/context/REMOTE_ENVIRONMENT.md`
+4. `docs/ceml-ra-ground-goal-and-phases.md`
+5. `git status --short --branch`
 
 ## Live Direction
 
@@ -58,9 +66,9 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next small product decision is whether to fill the remaining GBD/recycling
-source-value gaps for proposal seeding or first add a reviewable
-`research_thread` patch CLI if another thread-writing artifact is needed.
+The next product step can be a bounded proposal-seed artifact. If another
+thread-mutating artifact chunk comes first, add a small reviewable
+`research_thread_patch_cli` before continuing.
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -131,6 +139,9 @@ They should not be read or used as default context.
 
 The old local branches and preserved stash were deleted after explicit user
 approval. Historical material remains only in the full archive and Git history.
+
+The post-rebuild local chunk branches were also deleted after fast-forwarding
+and pushing `main`. Their commits are preserved in `main` history.
 
 ## Guardrails
 

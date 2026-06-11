@@ -1,5 +1,26 @@
 # Task Log
 
+## 2026-06-11 — Promoted rebuild chunks to main and cleaned local branches
+
+**Status:** Complete on `main`.
+
+Fast-forwarded `main` from `24c2536` to:
+
+```text
+a5de04b docs: update remote environment workflow
+```
+
+Pushed the promoted `main` to GitHub so `origin/main` is the current source of
+truth for the rebuild state. All intermediate local `codex/ceml-ra-*` chunk
+branches were deleted with normal `git branch -d` after confirming they were
+merged into `main`; no force deletion, rebase, squash, or history rewrite was
+used.
+
+The chunk commits remain preserved in `main` history. Next development should
+branch from `main`. The next product step can be a bounded proposal-seed
+artifact; if another thread-mutating artifact chunk comes first, add a small
+reviewable `research_thread_patch_cli` before continuing.
+
 ## 2026-06-11 — Completed rare-earth magnet proposal-seed readiness
 
 **Status:** Complete on `codex/ceml-ra-proposal-seed-readiness`.
