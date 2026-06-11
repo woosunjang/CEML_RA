@@ -78,9 +78,10 @@ writes.
 
 - `AGENTS.md` is the canonical repo-local instruction surface for Codex and
   other development agents.
-- `GEMINI.md` must not carry a separate product roadmap, runtime plan, stale
-  project tree, or schedule. Keep it as a pointer back to `AGENTS.md` unless
-  the user explicitly asks for Gemini-specific instructions.
+- `GEMINI.md` may carry environment notes for Gemini and other non-Codex
+  assistants, including remote-host reference commands, but it must not become
+  a separate product roadmap, runtime plan, stale project tree, or independent
+  schedule.
 
 ## Artifact Language Policy
 
