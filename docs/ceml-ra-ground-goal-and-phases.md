@@ -62,6 +62,10 @@ The rebuild uses three memory surfaces with different responsibilities.
 - It stores research thread Markdown and JSON, evidence matrices, weekly
   syntheses, proposal seeds, and portable snapshots.
 - It is the ground truth for review and handoff.
+- Because these artifacts are the user's review surface, user-readable
+  Markdown and narrative artifact content should be Korean-first by default.
+  English is reserved for stable IDs, schema keys, source titles, URLs, file
+  paths, code/log/ops surfaces, and standard technical terms when needed.
 - It must remain outside live runtime state and should normally live at:
 
   ```text

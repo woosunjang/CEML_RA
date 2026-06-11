@@ -53,15 +53,24 @@ agent surface unless the user explicitly asks for one.
 
 ## Artifact Language Policy
 
-- User-readable research and product artifacts should be written in Korean by
-  default. This includes Markdown narratives, evidence briefs, idea matrices,
-  proposal seeds, review summaries, and local Slack-style transcripts.
-- Machine-oriented structure can remain English: JSON schema keys, stable IDs,
-  route IDs, source IDs, CLI flags, API names, code, tests, logs, and runtime or
-  operations files.
-- For Markdown/JSON artifact pairs, prefer Korean for the Markdown and other
-  user-facing narrative strings while keeping stable machine keys and IDs in
+- Strong default: anything the user is expected to read as a research/product
+  artifact must be written in Korean unless the user explicitly asks for
+  English or the artifact is intentionally prepared for an external
+  English-language audience.
+- This especially applies to Markdown files, evidence briefs, idea matrices,
+  proposal seeds, review summaries, local Slack-style transcripts, decisions,
+  failure modes, next actions, tables, and explanatory prose.
+- For Markdown/JSON artifact pairs, Markdown must be Korean-first. JSON schema
+  keys, stable IDs, route IDs, source IDs, file paths, URLs, DOI titles, CLI
+  flags, API names, code, tests, logs, and runtime/operations files may remain
   English.
+- JSON values that are user-facing narrative, such as `text`, `decision`,
+  `claim_boundary`, `current_support`, `main_gap`, `proposal_role`,
+  `next_actions`, or summary fields, should also be Korean-first.
+- Technical terms may remain in English when they are standard in the research
+  context, but the surrounding sentence should be Korean. Before finishing any
+  user-readable Markdown artifact, reread headings, tables, decisions, failure
+  modes, and next actions to confirm they follow this policy.
 
 ## Git Guardrails
 
