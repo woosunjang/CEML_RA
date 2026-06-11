@@ -1,5 +1,33 @@
 # Task Log
 
+## 2026-06-11 — Implemented Research Work Package Planner v1
+
+**Status:** Complete on `codex/ceml-ra-work-package-planner`.
+
+Implemented a dry-run-first planner that reads a proposal seed plus the matching
+`research_thread` and produces a research work-package execution packet instead
+of manually authoring another research artifact:
+
+```text
+lab-orchestrator/orchestrator/research_work_package.py
+lab-orchestrator/tools/research_work_package_plan.py
+```
+
+The planner selects the next work package deterministically from proposal-seed
+work packages and current open next actions. For the current rare-earth magnet
+proposal seed it selects:
+
+```text
+hre_intensity_route_comparison
+```
+
+The output includes selected work package, selection rationale, source artifact
+refs, artifact contract, claim boundaries, missing evidence, stop conditions,
+and a `research_thread` patch preview. `--execute` writes only packet Markdown,
+packet JSON, and patch-preview JSON under `research_work_packages/`; it does
+not mutate the live research_thread. No Slack, runtime, Scout DB, Qdrant,
+Neo4j, Graphiti, KG/RAG, or remote branch state was mutated.
+
 ## 2026-06-11 — Completed research-thread patch CLI and rare-earth proposal seed
 
 **Status:** Complete on `codex/ceml-ra-proposal-seed-artifact`.

@@ -54,8 +54,10 @@ The Phase 1 memory-spine implementation is:
 ```text
 lab-orchestrator/orchestrator/research_thread.py
 lab-orchestrator/orchestrator/research_thread_patch.py
+lab-orchestrator/orchestrator/research_work_package.py
 lab-orchestrator/tools/seed_research_threads.py
 lab-orchestrator/tools/research_thread_patch.py
+lab-orchestrator/tools/research_work_package_plan.py
 lab-orchestrator/orchestrator/scout_thread_adapter.py
 lab-orchestrator/tools/scout_evidence_to_thread.py
 lab-orchestrator/orchestrator/research_coordinator.py
@@ -68,9 +70,11 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The rare-earth proposal-seed artifact now exists. The next product step should
-build from that seed: a one-page proposal concept note, a normalized
-HRE-intensity table, or a digital-twin/ML descriptor table.
+The rare-earth proposal-seed artifact now exists. The Research Work Package
+Planner now turns that seed plus the research_thread into a dry-run-first
+execution packet and research_thread patch preview. The next product step
+should execute a selected artifact contract from that packet, not manually
+author another one-off research artifact.
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -117,13 +121,20 @@ Proposal-seed artifact:
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/proposal_seed_artifact/
 ```
 
+Research work-package execution packets, when explicitly executed, are written
+under:
+
+```text
+${CEML_RA_ARTIFACTS_DIR:-generated}/research_work_packages/
+```
+
 The proposal-seed readiness pass keeps the existing route-ranking sheet as prior
 reviewed memory. It confirms primary recycling values for Br, BHmax, HcJ,
 renewed Tb-foil GBD, and high-temperature property checks, while keeping final
-GBD Br/BHmax as explicit `not_found` source gaps. The next product chunk can be
-a one-page proposal concept note or the calculation-scoping tables identified
-by the seed. Thread updates should use `lab-orchestrator/tools/research_thread_patch.py`
-rather than one-off scripts.
+GBD Br/BHmax as explicit `not_found` source gaps. Use
+`lab-orchestrator/tools/research_work_package_plan.py` to select and structure
+the next work package, and use `lab-orchestrator/tools/research_thread_patch.py`
+only after a patch preview has been reviewed.
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
 messages, or writes to Scout DB, Qdrant, Neo4j, or Graphiti for the next chunk.

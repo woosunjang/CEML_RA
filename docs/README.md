@@ -36,14 +36,13 @@ using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-The post-Chunk-4 validation queue is complete through Goal 4, and the
-artifact-first route-ranking extraction sheet for the rare-earth magnet
-HRE-sparing idea now exists under the durable artifact root. The next product
-decision is whether to fill remaining GBD/recycling source-value gaps for
-proposal seeding or first add a reviewable `research_thread` patch CLI if
-another thread-writing artifact is needed. KG ingest preview work remains
-deferred until the artifact chain shows exactly what is worth remembering. It
-must not write to Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
+The post-Chunk-4 validation queue is complete through proposal-seed readiness,
+proposal-seed artifact creation, the reviewable research-thread patch CLI, and
+Research Work Package Planner v1. The planner reads a proposal seed plus the
+matching research_thread and produces an execution packet and patch preview for
+the next artifact work. KG ingest preview work remains deferred until the
+artifact chain shows exactly what is worth remembering. It must not write to
+Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
 
 ## Storage Boundary
 

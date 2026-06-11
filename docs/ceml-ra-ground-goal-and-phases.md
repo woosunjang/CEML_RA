@@ -320,12 +320,12 @@ stages using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-The post-Chunk-4 validation queue is complete through Goal 4, and the
-artifact-first route-ranking extraction sheet for the rare-earth magnet
-HRE-sparing idea now exists. The next development decision is whether to fill
-remaining GBD/recycling source-value gaps for proposal seeding or first add a
-reviewable `research_thread` patch CLI if another thread-writing artifact is
-needed. KG ingest preview work remains deferred until useful question,
-evidence-brief, idea-matrix, partner-test, backlog, and route-ranking artifacts
-prove what should be remembered. Do not add live KG/RAG writes, mutation
-endpoints, Slack commands, or automation yet.
+The post-Chunk-4 validation queue is complete through proposal-seed readiness,
+proposal-seed artifact creation, the reviewable research-thread patch CLI, and
+Research Work Package Planner v1. The planner reads a proposal seed plus the
+matching research_thread and produces a dry-run-first execution packet and
+research_thread patch preview for the next artifact contract. KG ingest preview
+work remains deferred until useful question, evidence-brief, idea-matrix,
+partner-test, backlog, route-ranking, proposal-seed, and work-package planning
+artifacts prove what should be remembered. Do not add live KG/RAG writes,
+mutation endpoints, Slack commands, or automation yet.

@@ -21,9 +21,10 @@ agent surface unless the user explicitly asks for one.
   read-only review API, rare-earth route-ranking sheet, and rare-earth
   proposal-seed readiness pass, reviewable research-thread patch CLI, and
   rare-earth proposal-seed artifact now exist.
-- The next product step should build from the rare-earth proposal seed: either
-  a one-page proposal concept note, a normalized HRE-intensity table, or a
-  digital-twin/ML descriptor table. Keep the work artifact-first and bounded.
+- The next product step should build from the rare-earth proposal seed through
+  the Research Work Package Planner, then execute the selected artifact
+  contract. Do not continue by manually writing one-off research artifacts when
+  a reusable planner/runner boundary is needed.
 - KG ingest preview remains deferred until research-value artifacts prove what
   should be remembered.
 - Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
@@ -99,6 +100,9 @@ agent surface unless the user explicitly asks for one.
   agent outputs.
 - Prefer one useful research artifact over many status reports.
 - Do not count read-only observation as product progress.
+- Do not count Codex manually authoring another research artifact as product
+  progress once a repeated artifact shape is known; turn the shape into a
+  reusable planner, runner, or reviewable preview first.
 - Add a new report surface only if it clearly advances a research thread or
   reuses accumulated memory.
 - Keep API, workers, UI, Scout/RAG/KG, docs, and artifact contracts aligned.
