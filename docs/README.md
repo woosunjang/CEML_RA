@@ -25,6 +25,10 @@ The Research Loop Contract defines how automatic and on-demand research modes
 should share the same `research_thread` memory before more surfaces or
 automation are added.
 
+`lab-orchestrator/tools/research_loop_packet_plan.py` is the current dry-run
+entrypoint for planning one research loop without writing research content or
+mutating live stores.
+
 ## Storage Boundary
 
 - Source code belongs in git and GitHub.

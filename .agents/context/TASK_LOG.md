@@ -1,5 +1,26 @@
 # Task Log
 
+## 2026-06-12 — Implemented Research Loop Packet v1
+
+**Status:** Complete on `codex/ceml-ra-loop-packet`.
+
+Implemented a dry-run-first Research Loop Packet planner:
+
+```text
+lab-orchestrator/orchestrator/research_loop_packet.py
+lab-orchestrator/tools/research_loop_packet_plan.py
+lab-orchestrator/tests/test_research_loop_packet.py
+```
+
+The packet reads a selected `research_thread` plus trigger context and produces
+candidate subagent roles, expected outputs, stop conditions, artifact
+candidates, and a `research_thread` patch preview. It does not create new
+research content, does not mutate the live thread, and keeps
+`live_store_mutations: []`.
+
+No new rare-earth research artifact was created. No Slack, runtime, Scout DB,
+Qdrant, Neo4j, Graphiti, KG/RAG, or durable artifact root state was mutated.
+
 ## 2026-06-12 — Promoted baseline and drafted Research Loop Contract v1
 
 **Status:** Complete on `codex/ceml-ra-research-loop-contract`.

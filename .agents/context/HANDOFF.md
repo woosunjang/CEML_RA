@@ -1,7 +1,7 @@
 # Handoff
 
 **Updated:** 2026-06-12 KST
-**Current checkout:** `codex/ceml-ra-research-loop-contract`
+**Current checkout:** `codex/ceml-ra-loop-packet`
 
 ## Start Here
 
@@ -44,12 +44,17 @@ clean context before feature work.
   descriptor table suggestions, and Work Package Planner output as an implied
   next step.
 
-## Next Design Focus
+## Current Code Boundary
 
-Use `docs/ceml-ra-research-loop-contract-v1.md` to choose the next code boundary.
-The preferred next implementation should make Coordinator/subagent outputs flow
-back into `research_thread` patch previews or durable artifacts. Do not start by
-writing another rare-earth research artifact.
+`Research Loop Packet v1` now turns a selected `research_thread`, trigger
+context, candidate subagent roles, expected outputs, stop conditions, artifact
+candidates, and thread patch preview into dry-run-first Markdown/JSON planning
+artifacts.
+
+The next likely code boundary is a subagent output envelope that lets Scout,
+Literature/RAG, Evidence Critic, Writing, Project, and KG Memory return results
+to Coordinator in a shared shape. Do not start by writing another rare-earth
+research artifact.
 
 ## Boundaries
 
