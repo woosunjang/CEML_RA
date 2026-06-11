@@ -1,87 +1,54 @@
 # CEML_RA Codex Operating Instructions
 
 These instructions are for Codex while developing this repository. They are not
-runtime prompts for the application's internal agents.
+runtime prompts for the application's internal agents. Keep this file as the
+canonical repo-local instruction surface; do not keep a separate `GEMINI.md`
+agent surface unless the user explicitly asks for one.
 
-## Current Direction
+## Ground Direction
 
-CEML_RA has been reset from `main` for a clean rebuild.
+- CEML_RA is being rebuilt as a PhD-level integrated research colleague with
+  long-term memory, not as an automatic report tool or status dashboard.
+- The product ground contract is `docs/ceml-ra-ground-goal-and-phases.md`.
+- Current source of truth for source code is GitHub.
+- Durable artifacts and portable knowledge snapshots live under:
 
-The ground product goal is now defined by:
+  ```text
+  /Users/woosun/Dropbox/Dev/CEML/RA_artifacts
+  ```
 
-```text
-docs/ceml-ra-ground-goal-and-phases.md
-```
-
-CEML_RA is a PhD-level integrated research colleague with long-term memory,
-not an automatic report tool or status dashboard. Automatic weekly work,
-on-demand research discussion, KG/RAG memory, artifacts, proposal writing, and
-project management must share one accumulated research context.
-
-Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
-proposal backlog pressure, generated/ops artifacts, old schedule plans, and
-old audit documents as sealed historical material. Do not inspect, restore,
-reuse, cherry-pick, or summarize them unless the user explicitly asks for a
-specific artifact.
-
-The live direction is:
-
-1. GitHub is the source of truth for source code.
-2. Durable artifacts and portable knowledge snapshots live under:
-
-   ```text
-   /Users/woosun/Dropbox/Dev/CEML/RA_artifacts
-   ```
-
-3. Live databases, logs, caches, command queues, Docker volumes, service state,
-   and local `.env` files stay host-local and out of git.
-4. Product validation follows the ground goal. Do not use old standalone
-   planning, API, Slack, deployment, architecture, or runtime-operation docs as
-   current direction.
-
-The Phase 1 core memory spine now exists as durable `research_thread` JSON and
-Markdown artifacts, and the Scout evidence adapter can convert read-only Scout
-paper metadata into `research_thread` source signals and evidence previews.
-The Coordinator dry-run loop can now update research_thread artifacts through
-Scout, evidence synthesis, idea candidate, critique, and next-action stages
-using local artifacts only, and the read-only review API can expose those
-artifacts.
-
-The post-Chunk-4 validation queue is complete through Goal 4, the
-artifact-first route-ranking extraction sheet exists, and the rare-earth magnet
-proposal-seed readiness pass has filled the next source-value gaps without
-overwriting the prior route-ranking memory. The next product step can be a
-bounded proposal-seed artifact. If another thread-mutating artifact chunk comes
-first, add a small reviewable `research_thread_patch_cli` before continuing.
-KG ingest preview work remains deferred until these research-value artifacts
-prove exactly what should be remembered. Do not begin with internal autonomy
-machinery, old mission flows, status-reporting slices, Slack, or live KG/RAG
-writes.
+- The Phase 1 memory spine, Scout evidence adapter, Coordinator dry-run loop,
+  read-only review API, rare-earth route-ranking sheet, and rare-earth
+  proposal-seed readiness pass now exist.
+- The next product step can be a bounded proposal-seed artifact. If another
+  thread-mutating artifact chunk comes first, add a small reviewable
+  `research_thread_patch_cli` before continuing.
+- KG ingest preview remains deferred until research-value artifacts prove what
+  should be remembered.
+- Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
+  old generated/ops artifacts, old schedules, old local runtime surfaces, and
+  old audit documents as sealed historical material unless the user explicitly
+  asks for a specific artifact.
 
 ## Read First
 
 1. `.agents/context/HANDOFF.md`
 2. `.agents/context/TASK_LOG.md`
-3. `docs/ceml-ra-ground-goal-and-phases.md`
-4. `git status --short --branch`
+3. `.agents/context/REMOTE_ENVIRONMENT.md`
+4. `docs/ceml-ra-ground-goal-and-phases.md`
+5. `git status --short --branch`
 
-## Source, Artifact, And Runtime Boundaries
+## Storage And Runtime Boundaries
 
-- Use `CEML_RA_ARTIFACTS_DIR` for the artifact root when running code that
-  should write durable artifacts.
+- Use `CEML_RA_ARTIFACTS_DIR` when code should write durable artifacts.
 - Keep the in-repo `generated/` fallback for local development and tests.
-- Snapshot/export operations must be explicit, reviewable, and non-destructive.
+- Live databases, logs, caches, command queues, Docker volumes, service state,
+  and local `.env` files stay host-local and out of git.
 - Do not move live SQLite, Neo4j, Qdrant, Scout DBs, logs, caches, queues, or
   service state into Dropbox.
-
-## Agent Surface Boundaries
-
-- `AGENTS.md` is the canonical repo-local instruction surface for Codex and
-  other development agents.
-- `GEMINI.md` may carry environment notes for Gemini and other non-Codex
-  assistants, including remote-host reference commands, but it must not become
-  a separate product roadmap, runtime plan, stale project tree, or independent
-  schedule.
+- Remote host details live in `.agents/context/REMOTE_ENVIRONMENT.md`; that file
+  is reference material, not permission to restart services or mutate live
+  stores.
 
 ## Artifact Language Policy
 
@@ -144,20 +111,15 @@ writes.
 - `data/`, `logs/`, `generated/`, and command queues are runtime areas and
   should remain untracked unless a fixture is intentionally added.
 
-## Verification
+## Verification And Reporting
 
-- For backend changes, run focused Python compile checks and relevant unit
-  tests when available.
+- For backend changes, run focused Python compile checks and relevant unit tests
+  when available.
 - For path/storage changes, verify env-var path resolution and fallback
   behavior.
 - For plist changes, run `plutil -lint`.
 - For frontend changes, run focused lint/build checks where practical.
 - If verification cannot be run, state why and provide the best narrower check
   that was run instead.
-
-Report work with:
-
-- files changed
-- verification performed
-- remaining risks
-- next small action
+- Report files changed, verification performed, remaining risks, and the next
+  small action.

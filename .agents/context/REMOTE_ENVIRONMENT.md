@@ -1,35 +1,10 @@
-# CEML Research Assistant — Gemini Project Notes
+# Remote Environment Reference
 
-이 파일은 Gemini 또는 비-Codex 개발 보조자가 이 저장소를 다룰 때
-참고할 프로젝트 환경 메모다.
+이 파일은 CEML_RA의 원격 운영/검증 환경을 참조하기 위한 메모다.
+제품 방향, 개발 우선순위, 런타임 변경 권한의 기준은 항상 `AGENTS.md`와
+`docs/ceml-ra-ground-goal-and-phases.md`다.
 
-제품 방향, 개발 우선순위, 금지된 런타임 작업의 canonical source는
-항상 `AGENTS.md`와 `docs/ceml-ra-ground-goal-and-phases.md`다. 이 파일은
-그 지침을 대체하지 않는다.
-
-## 현재 우선순위
-
-- CEML_RA는 자동 리포트 도구가 아니라 장기 기억을 가진 박사급 통합
-  연구 동료로 재구축 중이다.
-- 현재 개발은 durable `research_thread`와 research-value artifact를
-  중심으로 진행한다.
-- Slack, runtime/watchdog, Scout DB, Qdrant, Neo4j, Graphiti, KG, RAG store는
-  사용자가 명시적으로 요청하지 않는 한 변경하지 않는다.
-- 이전 런타임/스케줄/old autonomy 문서는 현재 제품 방향으로 쓰지 않는다.
-
-## 아티팩트 언어 원칙
-
-- 사용자에게 읽히는 연구/제품 아티팩트는 기본적으로 한글로 작성한다.
-- Markdown narrative, evidence brief, idea matrix, proposal seed, review
-  summary, local Slack-style transcript는 한글을 우선한다.
-- JSON schema key, stable ID, route/source ID, CLI/API 이름, 코드, 테스트,
-  로그, 운영 파일은 영어를 유지해도 된다.
-- Markdown/JSON 쌍에서는 Markdown과 user-facing narrative string은 한글,
-  machine key와 stable ID는 영어를 우선한다.
-
-## 인프라 환경
-
-### 개발 환경: 이 컴퓨터
+## 개발 환경: 이 컴퓨터
 
 - **역할**: 코드 작성, AG/Codex/Gemini 인터랙션, 파일 편집
 - **사용자**: `woosun`
@@ -41,7 +16,7 @@
   /Users/woosun/Dropbox/Dev/CEML/RA_artifacts
   ```
 
-### 운영/검증 환경: M2 Mac Mini
+## 운영/검증 환경: M2 Mac Mini
 
 이 정보는 접속과 환경 참조용이다. 현재 rebuild 단계에서는 stale runtime과
 watchdog이 의도적으로 중지되어 있으므로, 사용자가 명시적으로 요청하지 않는
@@ -61,7 +36,7 @@ watchdog이 의도적으로 중지되어 있으므로, 사용자가 명시적으
   source ~/.zshrc 2>/dev/null; conda activate lab-research-agents
   ```
 
-### 기본 규칙
+## 기본 규칙
 
 - 코드 작성과 편집은 개발 환경에서 수행한다.
 - 원격 Mac Mini에서 `pip install`, 서버 기동, 테스트, 검증이 필요하면 먼저
