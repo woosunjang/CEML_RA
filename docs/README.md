@@ -1,48 +1,24 @@
 # CEML_RA Docs
 
-This directory now contains only the current rebuild contract. Older
-operational and planning documents were removed after the hard reset because
-they described or reintroduced stale runtime/product surfaces.
+This directory is a small index for current repo-local project truth.
 
-## Current Truth Hierarchy
-
-Read this first:
+Read first:
 
 1. [CEML_RA Ground Goal And Phased Rebuild](ceml-ra-ground-goal-and-phases.md)
+2. [Repo operating instructions](../AGENTS.md)
+3. [Current handoff](../.agents/context/HANDOFF.md)
+4. [Task log](../.agents/context/TASK_LOG.md)
 
-## Direction
+## Direction Boundary
 
 CEML_RA is being rebuilt as a PhD-level integrated research colleague with
-long-term memory. It is not currently defined by any old local runtime, old
-Slack command surface, old launchd service, old API reference, or old autonomy
-mission flow.
+long-term memory. It is not defined by old local runtimes, old Slack command
+surfaces, old launchd services, old API references, old autonomy mission flows,
+or stale Codex global memory.
 
-The Phase 1 core memory-spine target is implemented as a local artifact
-contract:
-
-```text
-research_thread JSON + Markdown artifacts under
-${CEML_RA_ARTIFACTS_DIR:-generated}/research_threads/
-```
-
-The Scout evidence adapter now converts read-only Scout paper metadata into
-research_thread source signals and evidence previews without mutating Scout DB,
-Qdrant, Neo4j, Graphiti, or Slack.
-
-The Coordinator dry-run loop now updates research_thread artifacts through
-Scout, evidence synthesis, idea candidate, critique, and next-action stages
-using local artifacts only.
-
-The read-only review API now exposes research_thread artifacts so UI and Slack
-can later share the same memory spine.
-
-The post-Chunk-4 validation queue is complete through proposal-seed readiness,
-proposal-seed artifact creation, the reviewable research-thread patch CLI, and
-Research Work Package Planner v1. The planner reads a proposal seed plus the
-matching research_thread and produces an execution packet and patch preview for
-the next artifact work. KG ingest preview work remains deferred until the
-artifact chain shows exactly what is worth remembering. It must not write to
-Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
+Recent research artifacts, proposal artifacts, and planner outputs are
+available context only. They are not an implied roadmap. Choose the next product
+step from the current repo-local files and the user's latest instruction.
 
 ## Storage Boundary
 
@@ -55,11 +31,8 @@ Neo4j, Graphiti, Qdrant, Scout DB, Slack, or runtime services.
 
 - Live runtime state, local databases, logs, caches, queues, volumes, and
   `.env` files stay host-local and out of git.
-- The relevant source, artifact, and runtime rules now live in the ground
-  contract.
 
-## Runtime State
+## Runtime Boundary
 
-Do not assume a local service is current just because a port is open. After the
-hard reset, stale runtimes and watchdogs should be stopped before new baseline
-work begins.
+Do not assume a local service is current just because a port is open. Stale
+runtimes and watchdogs are not product evidence.

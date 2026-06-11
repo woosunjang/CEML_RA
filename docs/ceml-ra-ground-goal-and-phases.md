@@ -300,7 +300,7 @@ They may be inspected only when the user asks for a specific artifact or when a
 cleanup preview needs to identify what will be removed. They should not be used
 as the blueprint for the rebuild.
 
-## Current Development Target
+## Current Implementation Context
 
 The Phase 1 core memory-spine implementation now exists as durable
 `research_thread` JSON and Markdown artifacts seeded for:
@@ -320,12 +320,12 @@ stages using local artifacts only.
 The read-only review API now exposes research_thread artifacts so UI and Slack
 can later share the same memory spine.
 
-The post-Chunk-4 validation queue is complete through proposal-seed readiness,
-proposal-seed artifact creation, the reviewable research-thread patch CLI, and
-Research Work Package Planner v1. The planner reads a proposal seed plus the
-matching research_thread and produces a dry-run-first execution packet and
-research_thread patch preview for the next artifact contract. KG ingest preview
-work remains deferred until useful question, evidence-brief, idea-matrix,
-partner-test, backlog, route-ranking, proposal-seed, and work-package planning
-artifacts prove what should be remembered. Do not add live KG/RAG writes,
-mutation endpoints, Slack commands, or automation yet.
+Later validation artifacts, proposal artifacts, thread patch tooling, and work
+package planning tools may exist in the repo or artifact root. They are
+available context only, not an implied roadmap. The next product step must be
+chosen from the user's current instruction and the repo-local handoff, not from
+artifact momentum or stale Codex global memory.
+
+KG ingest preview remains deferred. Do not add live KG/RAG writes, mutation
+endpoints, Slack commands, or automation until the user explicitly selects that
+direction.

@@ -1,5 +1,28 @@
 # Task Log
 
+## 2026-06-12 — Tightened repo-local context against stale Codex memory
+
+**Status:** Complete on `codex/ceml-ra-work-package-planner`.
+
+Repo-local docs now explicitly state that CEML_RA must not infer the next
+product direction from Codex global memory, old runtime evidence, old 2-week/RQF
+plans, rare-earth proposal follow-ons, HRE table suggestions, descriptor table
+suggestions, or Work Package Planner output.
+
+`docs/README.md` was reduced to a short current-truth index instead of a
+chronological implementation summary. `.agents/context/HANDOFF.md` was reduced
+to a short boot note with cleanup TODOs. The pending memory-maintenance TODO is
+to clean these Codex memory Markdown/index files when direct memory maintenance
+is available:
+
+```text
+/Users/woosun/.codex/memories/memory_summary.md
+/Users/woosun/.codex/memories/MEMORY.md
+```
+
+No runtime services, Slack surfaces, Scout DB, Qdrant, Neo4j, Graphiti, KG/RAG
+stores, or durable research artifacts were mutated.
+
 ## 2026-06-11 — Implemented Research Work Package Planner v1
 
 **Status:** Complete on `codex/ceml-ra-work-package-planner`.
@@ -78,10 +101,9 @@ branches were deleted with normal `git branch -d` after confirming they were
 merged into `main`; no force deletion, rebase, squash, or history rewrite was
 used.
 
-The chunk commits remain preserved in `main` history. Next development should
-branch from `main`. The next product step can be a bounded proposal-seed
-artifact; if another thread-mutating artifact chunk comes first, add a small
-reviewable `research_thread_patch_cli` before continuing.
+The chunk commits remain preserved in `main` history. At that time, a bounded
+proposal-seed artifact was considered as a possible follow-on, but this entry is
+historical and must not be used as the current roadmap.
 
 ## 2026-06-11 — Completed rare-earth magnet proposal-seed readiness
 
@@ -108,10 +130,9 @@ failure modes, and next actions; `materials_ontology_kg` was not changed. No
 Scout DB, Qdrant, Neo4j, Graphiti, Slack, KG/RAG, runtime, or watchdog state was
 mutated.
 
-Next product step: draft a bounded proposal-seed artifact. If the next chunk
-will mutate research_thread again, first add a small reviewable
-`research_thread_patch_cli`, because both route-ranking and proposal-readiness
-needed one-off thread updates.
+At that time, a bounded proposal-seed artifact and reviewable
+`research_thread_patch_cli` were considered as follow-ons. This entry is
+historical and must not be used as the current roadmap.
 
 ## 2026-06-11 — Completed rare-earth magnet route-ranking sheet
 
@@ -200,12 +221,14 @@ The transcript reused Test Chunk 2 evidence and improved the selected idea by:
   evidence appears;
 - rejecting overbroad rare-earth-free framing in favor of HRE intensity
   reduction with performance-preserving microstructure control;
-- defining a route-ranking extraction sheet as the next concrete artifact.
+- defining a route-ranking extraction sheet as the concrete follow-on artifact
+  at that time.
 
 No Slack message was sent. No Scout DB, Qdrant, Neo4j, Graphiti, Slack, or
 runtime services were mutated.
 
-Next product step: Goal 4, observed-value automation backlog.
+At that time, Goal 4 observed-value automation backlog was the follow-on. This
+entry is historical and must not be used as the current roadmap.
 
 ## 2026-06-11 — Completed Test Chunk 2 evidence briefs and idea matrices
 
@@ -239,8 +262,9 @@ modes, decisions, and next actions. The claims remain candidate status, not
 accepted final facts. No Scout DB, Qdrant, Neo4j, Graphiti, Slack, or runtime
 services were mutated.
 
-Next product step: Goal 3, a local Slack-style research partner transcript on
-`idea_rem_hre_sparing_route_ranking`.
+At that time, Goal 3 was a local Slack-style research partner transcript on
+`idea_rem_hre_sparing_route_ranking`. This entry is historical and must not be
+used as the current roadmap.
 
 ## 2026-06-11 — Completed Test Chunk 1 Research Question Factory
 
@@ -265,16 +289,17 @@ were updated only with decisions and next actions. No literature claims were
 accepted, and no Scout DB, Qdrant, Neo4j, Graphiti, Slack, or runtime services
 were mutated.
 
-Next product step: Test Chunk 2, evidence briefs and idea matrices from the
-selected question-factory outputs.
+At that time, Test Chunk 2 evidence briefs and idea matrices were considered as
+the follow-on. This entry is historical and must not be used as the current
+roadmap.
 
 ## 2026-06-11 — Realigned post-Chunk-4 validation direction
 
 **Status:** Complete on `codex/ceml-ra-test-plan-realign`.
 
 After Chunk 4, the repo still pointed to a KG ingest preview as the next
-product step. That was premature for the current validation plan. The next
-product step is now Test Chunk 1: Research Question Factory for:
+product step. That was premature for the validation plan at that time, which
+then moved to Test Chunk 1: Research Question Factory for:
 
 ```text
 materials_ontology_kg
@@ -331,8 +356,8 @@ lab-orchestrator/tests/test_research_coordinator.py
 The CLI defaults to dry-run. `--execute` updates only local research_thread
 JSON and Markdown artifacts.
 
-Next product step: Chunk 4, read-only review surface for research_thread
-artifacts.
+At that time, Chunk 4 was a read-only review surface for research_thread
+artifacts. This entry is historical and must not be used as the current roadmap.
 
 ## 2026-06-11 — Implemented Scout evidence to research_thread adapter
 
@@ -353,8 +378,8 @@ The CLI defaults to dry-run. `--execute` updates only the existing
 research_thread JSON and Markdown artifacts. It does not mutate Scout DB,
 Qdrant, Neo4j, Graphiti, Slack, or runtime services.
 
-Next product step: Chunk 3, Coordinator dry-run loop using local artifacts
-only.
+At that time, Chunk 3 was a Coordinator dry-run loop using local artifacts only.
+This entry is historical and must not be used as the current roadmap.
 
 ## 2026-06-11 — Implemented Phase 1 research_thread core
 
@@ -383,7 +408,8 @@ decisions, concrete next research questions, and a KG preview guardrail. They
 do not contain fake literature claims or mutate live Scout, Qdrant, Neo4j,
 Graphiti, Slack, or runtime state.
 
-Next product step: Chunk 2, Scout evidence to research_thread adapter.
+At that time, Chunk 2 was the Scout evidence to research_thread adapter. This
+entry is historical and must not be used as the current roadmap.
 
 ## 2026-06-11 — Collapsed docs to the ground contract
 

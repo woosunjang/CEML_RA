@@ -21,16 +21,27 @@ agent surface unless the user explicitly asks for one.
   read-only review API, rare-earth route-ranking sheet, and rare-earth
   proposal-seed readiness pass, reviewable research-thread patch CLI, and
   rare-earth proposal-seed artifact now exist.
-- The next product step should build from the rare-earth proposal seed through
-  the Research Work Package Planner, then execute the selected artifact
-  contract. Do not continue by manually writing one-off research artifacts when
-  a reusable planner/runner boundary is needed.
+- Recent proposal and work-package planning artifacts are available tools and
+  historical context, not an implied roadmap. Do not infer the next product step
+  from them unless the user explicitly selects that direction.
 - KG ingest preview remains deferred until research-value artifacts prove what
   should be remembered.
 - Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
   old generated/ops artifacts, old schedules, old local runtime surfaces, and
   old audit documents as sealed historical material unless the user explicitly
   asks for a specific artifact.
+
+## Memory And Context Precedence
+
+- Repo-local truth wins over Codex global memory for this project.
+- Do not use Codex memory to choose the next CEML_RA roadmap item.
+- If Codex memory mentions old 2-week/RQF plans, old autonomy/runtime work,
+  rare-earth proposal follow-ons, HRE tables, descriptor tables, or Work Package
+  Planner output as a next step, treat those memories as stale.
+- Start each CEML_RA planning or implementation task from this repo's current
+  files, current branch graph, and the user's latest instruction.
+- If repo-local docs and memory disagree, clean the repo-local docs and context
+  before feature work.
 
 ## Read First
 
