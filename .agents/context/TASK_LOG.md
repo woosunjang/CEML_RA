@@ -1,5 +1,39 @@
 # Task Log
 
+## 2026-06-11 — Completed research-thread patch CLI and rare-earth proposal seed
+
+**Status:** Complete on `codex/ceml-ra-proposal-seed-artifact`.
+
+Implemented a small reviewable research-thread patch CLI:
+
+```text
+lab-orchestrator/orchestrator/research_thread_patch.py
+lab-orchestrator/tools/research_thread_patch.py
+```
+
+The CLI defaults to dry-run, writes only with `--execute`, supports append and
+status/metadata updates for `decisions`, `next_actions`, and `failure_modes`,
+and keeps live-store mutation count at zero.
+
+Generated durable proposal-seed artifacts:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/proposal_seed_artifact/
+```
+
+The seed is written in Korean for the user-readable narrative and keeps machine
+keys/IDs in English. It advances the HRE-sparing rare-earth magnet idea into a
+bounded proposal-review shape: FSPS HRE-free and Tb-Ga GBD HRE-lean are the
+primary proposal-review comparison, digital-twin/ML is the calculation-scoping
+lane, and recycling-linked reprocessing remains supporting circularity context
+with an explicit added-Tb caveat.
+
+Updated only the `rare_earth_magnets` research_thread using the new patch CLI:
+`proposal_seed_readiness.draft_seed` and `proposal_seed_readiness.thread_patch_cli`
+are now completed, and new next actions point to a one-page concept note,
+HRE-intensity table, and digital-twin/ML descriptor table. No Slack, runtime,
+Scout DB, Qdrant, Neo4j, Graphiti, KG/RAG, or watchdog state was mutated.
+
 ## 2026-06-11 — Promoted rebuild chunks to main and cleaned local branches
 
 **Status:** Complete on `main`.

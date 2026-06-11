@@ -53,7 +53,9 @@ The Phase 1 memory-spine implementation is:
 
 ```text
 lab-orchestrator/orchestrator/research_thread.py
+lab-orchestrator/orchestrator/research_thread_patch.py
 lab-orchestrator/tools/seed_research_threads.py
+lab-orchestrator/tools/research_thread_patch.py
 lab-orchestrator/orchestrator/scout_thread_adapter.py
 lab-orchestrator/tools/scout_evidence_to_thread.py
 lab-orchestrator/orchestrator/research_coordinator.py
@@ -66,9 +68,9 @@ Initial topics remain:
 - `materials_ontology_kg`
 - `rare_earth_magnets`
 
-The next product step can be a bounded proposal-seed artifact. If another
-thread-mutating artifact chunk comes first, add a small reviewable
-`research_thread_patch_cli` before continuing.
+The rare-earth proposal-seed artifact now exists. The next product step should
+build from that seed: a one-page proposal concept note, a normalized
+HRE-intensity table, or a digital-twin/ML descriptor table.
 
 KG ingest preview work is deferred until the question factory, evidence brief,
 and idea matrix artifacts show what is worth remembering.
@@ -109,13 +111,19 @@ Proposal-seed readiness artifacts:
 /Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/proposal_seed_readiness/
 ```
 
+Proposal-seed artifact:
+
+```text
+/Users/woosun/Dropbox/Dev/CEML/RA_artifacts/research_value_tests/proposal_seed_artifact/
+```
+
 The proposal-seed readiness pass keeps the existing route-ranking sheet as prior
 reviewed memory. It confirms primary recycling values for Br, BHmax, HcJ,
 renewed Tb-foil GBD, and high-temperature property checks, while keeping final
 GBD Br/BHmax as explicit `not_found` source gaps. The next product chunk can be
-a bounded proposal-seed artifact. If the next chunk will mutate research_thread
-again, first add a small reviewable `research_thread_patch_cli`; route-ranking
-and proposal-readiness both needed one-off thread updates.
+a one-page proposal concept note or the calculation-scoping tables identified
+by the seed. Thread updates should use `lab-orchestrator/tools/research_thread_patch.py`
+rather than one-off scripts.
 
 Do not add live KG/RAG writes, mutation endpoints, runtime restarts, Slack
 messages, or writes to Scout DB, Qdrant, Neo4j, or Graphiti for the next chunk.

@@ -19,10 +19,11 @@ agent surface unless the user explicitly asks for one.
 
 - The Phase 1 memory spine, Scout evidence adapter, Coordinator dry-run loop,
   read-only review API, rare-earth route-ranking sheet, and rare-earth
-  proposal-seed readiness pass now exist.
-- The next product step can be a bounded proposal-seed artifact. If another
-  thread-mutating artifact chunk comes first, add a small reviewable
-  `research_thread_patch_cli` before continuing.
+  proposal-seed readiness pass, reviewable research-thread patch CLI, and
+  rare-earth proposal-seed artifact now exist.
+- The next product step should build from the rare-earth proposal seed: either
+  a one-page proposal concept note, a normalized HRE-intensity table, or a
+  digital-twin/ML descriptor table. Keep the work artifact-first and bounded.
 - KG ingest preview remains deferred until research-value artifacts prove what
   should be remembered.
 - Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,
