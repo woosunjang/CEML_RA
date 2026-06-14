@@ -1,7 +1,7 @@
 # Handoff
 
-**Updated:** 2026-06-12 KST
-**Current checkout:** `codex/ceml-ra-subagent-output-envelope`
+**Updated:** 2026-06-14 KST
+**Current checkout:** `main`
 
 ## Start Here
 
@@ -33,6 +33,10 @@ clean context before feature work.
 
 ## Open Cleanup TODO
 
+- `Subagent Output Envelope v1` has been fast-forwarded into local `main`, and
+  the merged local `codex/ceml-ra-subagent-output-envelope` branch was removed
+  with normal `git branch -d`. `origin/main` has not been pushed past
+  `0a5b274` because push requires explicit user approval.
 - The prior linear branch stack has been promoted to `main`, pushed to GitHub,
   and local checkpoint branches were removed with normal `git branch -d`.
 - Clean Codex memory Markdown/index files when the environment permits direct

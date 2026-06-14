@@ -1,5 +1,30 @@
 # Task Log
 
+## 2026-06-14 — Promoted Subagent Output Envelope branch locally
+
+**Status:** Complete locally on `main`.
+
+Fast-forwarded local `main` from `0a5b274` to:
+
+```text
+7277f6b feat: add subagent output envelope planner
+```
+
+Deleted the merged local `codex/ceml-ra-subagent-output-envelope` branch with
+normal `git branch -d`. `origin/main` remains at `0a5b274` because pushing to
+GitHub requires explicit user approval.
+
+Verification:
+
+```text
+env PYTHONPYCACHEPREFIX=/tmp/ceml_ra_pycache python3 -m py_compile orchestrator/subagent_output_envelope.py tools/subagent_output_envelope_plan.py tests/test_subagent_output_envelope.py
+env PYTHONPYCACHEPREFIX=/tmp/ceml_ra_pycache python3 tests/test_subagent_output_envelope.py
+```
+
+The direct unittest run passed 6 tests. No Slack, runtime services, Scout DB,
+Qdrant, Neo4j, Graphiti, KG/RAG, durable artifact root, or live store state was
+mutated.
+
 ## 2026-06-12 — Implemented Subagent Output Envelope v1
 
 **Status:** Complete on `codex/ceml-ra-subagent-output-envelope`.
