@@ -8,6 +8,7 @@ Slack, or runtime services.
 from __future__ import annotations
 
 import json
+import copy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +17,8 @@ from typing import Any, Iterable
 from orchestrator.config import ARTIFACTS_DIR
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+SUPPORTED_SCHEMA_VERSIONS = (1, 2)
 RESEARCH_THREADS_DIR = "research_threads"
 DEFAULT_SEED_TOPICS = ("materials_ontology_kg", "rare_earth_magnets")
 GROUND_CONTRACT_REF = "docs/ceml-ra-ground-goal-and-phases.md"
@@ -32,6 +34,18 @@ SECTION_NAMES = (
     "next_actions",
     "kg_ingest_preview",
 )
+
+SECTION_OBJECT_TYPES = {
+    "source_signals": "source_signal",
+    "claims": "claim",
+    "evidence": "evidence",
+    "counterarguments": "counterargument",
+    "idea_candidates": "idea_candidate",
+    "failure_modes": "failure_mode",
+    "decisions": "decision",
+    "next_actions": "next_action",
+    "kg_ingest_preview": "kg_ingest_preview",
+}
 
 REQUIRED_FIELDS = (
     "schema_version",
@@ -85,15 +99,32 @@ def make_section_item(
     confidence: str | None = None,
     tags: Iterable[str] | None = None,
     metadata: dict[str, Any] | None = None,
+    object_type: str | None = None,
+    object_ref: str | None = None,
+    authority_state: str | None = None,
+    review_state: str | None = None,
+    support_state: str | None = None,
+    artifact_refs: Iterable[str] | None = None,
+    related_object_refs: Iterable[str] | None = None,
+    provenance: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     item: dict[str, Any] = {
         "id": item_id,
         "text": text,
         "status": status,
         "created_at": created_at or utc_now(),
+        "object_type": object_type or _infer_object_type(item_id),
+        "object_ref": object_ref or _object_ref_from_item_id(item_id),
+        "authority_state": authority_state or "thread_local",
+        "review_state": review_state or _default_review_state(status),
+        "support_state": support_state or confidence or "not_evaluated",
+        "artifact_refs": list(artifact_refs or []),
+        "related_object_refs": list(related_object_refs or []),
+        "provenance": dict(provenance or {}),
     }
     if source_refs:
         item["source_refs"] = list(source_refs)
+        item["provenance"].setdefault("source_refs", list(source_refs))
     if confidence is not None:
         item["confidence"] = confidence
     if tags:
@@ -103,7 +134,38 @@ def make_section_item(
     return item
 
 
+def normalize_research_thread(thread: dict[str, Any]) -> dict[str, Any]:
+    """Return a schema v2 thread while accepting legacy schema v1 artifacts."""
+    if not isinstance(thread, dict):
+        raise ValueError("research_thread must be an object")
+    data = copy.deepcopy(thread)
+    missing = [field for field in REQUIRED_FIELDS if field not in data]
+    if missing:
+        raise ValueError(f"research_thread missing required fields: {', '.join(missing)}")
+    schema_version = data["schema_version"]
+    if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+        raise ValueError(f"unsupported research_thread schema_version: {schema_version}")
+    for section in SECTION_NAMES:
+        if section not in data:
+            raise ValueError(f"research_thread missing section: {section}")
+        if not isinstance(data[section], list):
+            raise ValueError(f"research_thread section must be a list: {section}")
+        data[section] = [
+            _normalize_section_item(section, item, legacy=schema_version == 1)
+            for item in data[section]
+        ]
+    metadata = data.get("metadata", {})
+    if not isinstance(metadata, dict):
+        raise ValueError("research_thread metadata must be an object")
+    data["metadata"] = dict(metadata)
+    data["metadata"].setdefault("authority_model", "research_thread_v2")
+    data["metadata"].setdefault("object_model", "section_items_with_object_refs")
+    data["schema_version"] = SCHEMA_VERSION
+    return data
+
+
 def validate_research_thread(thread: dict[str, Any]) -> None:
+    thread = normalize_research_thread(thread)
     missing = [field for field in REQUIRED_FIELDS if field not in thread]
     if missing:
         raise ValueError(f"research_thread missing required fields: {', '.join(missing)}")
@@ -135,9 +197,19 @@ def _validate_section_item(section: str, item: Any) -> None:
         raise ValueError(f"research_thread item tags must be a list: {section}.{item['id']}")
     if "metadata" in item and not isinstance(item["metadata"], dict):
         raise ValueError(f"research_thread item metadata must be an object: {section}.{item['id']}")
+    for field in ("object_type", "object_ref", "authority_state", "review_state", "support_state"):
+        if not isinstance(item.get(field), str) or not item[field].strip():
+            raise ValueError(f"research_thread item field must be a non-empty string: {section}.{field}")
+    if "artifact_refs" in item and not isinstance(item["artifact_refs"], list):
+        raise ValueError(f"research_thread item artifact_refs must be a list: {section}.{item['id']}")
+    if "related_object_refs" in item and not isinstance(item["related_object_refs"], list):
+        raise ValueError(f"research_thread item related_object_refs must be a list: {section}.{item['id']}")
+    if "provenance" in item and not isinstance(item["provenance"], dict):
+        raise ValueError(f"research_thread item provenance must be an object: {section}.{item['id']}")
 
 
 def render_research_thread_markdown(thread: dict[str, Any]) -> str:
+    thread = normalize_research_thread(thread)
     validate_research_thread(thread)
     lines = [
         f"# Research Thread: {thread['topic']}",
@@ -162,12 +234,21 @@ def render_research_thread_markdown(thread: dict[str, Any]) -> str:
             continue
         for item in items:
             lines.append(f"- `{item['id']}` [{item['status']}] {item['text']}")
+            lines.append(f"  - Object ref: `{item['object_ref']}`")
+            lines.append(
+                "  - Authority: "
+                f"{item['authority_state']} / Review: {item['review_state']} / Support: {item['support_state']}"
+            )
             if item.get("source_refs"):
                 lines.append(f"  - Source refs: {', '.join(item['source_refs'])}")
             if item.get("confidence"):
                 lines.append(f"  - Confidence: {item['confidence']}")
             if item.get("tags"):
                 lines.append(f"  - Tags: {', '.join(item['tags'])}")
+            if item.get("artifact_refs"):
+                lines.append(f"  - Artifact refs: {', '.join(item['artifact_refs'])}")
+            if item.get("related_object_refs"):
+                lines.append(f"  - Related object refs: {', '.join(item['related_object_refs'])}")
         lines.append("")
 
     lines.extend(["## Metadata", "", "```json", json.dumps(thread.get("metadata", {}), ensure_ascii=False, indent=2, sort_keys=True), "```", ""])
@@ -180,6 +261,7 @@ def write_research_thread(
     artifacts_dir: Path | None = None,
     overwrite: bool = False,
 ) -> dict[str, Any]:
+    thread = normalize_research_thread(thread)
     validate_research_thread(thread)
     paths = research_thread_paths(thread["thread_id"], artifacts_dir)
     if not overwrite and (paths.json_path.exists() or paths.markdown_path.exists()):
@@ -207,6 +289,7 @@ def write_research_thread(
 def load_research_thread(thread_id: str, *, artifacts_dir: Path | None = None) -> dict[str, Any]:
     paths = research_thread_paths(thread_id, artifacts_dir)
     data = json.loads(paths.json_path.read_text(encoding="utf-8"))
+    data = normalize_research_thread(data)
     validate_research_thread(data)
     return data
 
@@ -219,6 +302,7 @@ def list_research_threads(*, artifacts_dir: Path | None = None) -> list[dict[str
     for path in sorted(base.glob("*.json")):
         try:
             thread = json.loads(path.read_text(encoding="utf-8"))
+            thread = normalize_research_thread(thread)
             validate_research_thread(thread)
         except (OSError, json.JSONDecodeError, ValueError):
             continue
@@ -255,6 +339,9 @@ def build_seed_research_thread(topic: str, *, created_at: str | None = None) -> 
                 source_refs=[GROUND_CONTRACT_REF],
                 confidence="contract",
                 tags=["phase1", "seed"],
+                authority_state="ground_contract",
+                review_state="reviewed",
+                support_state="contract",
             )
         ],
         "claims": [],
@@ -271,6 +358,9 @@ def build_seed_research_thread(topic: str, *, created_at: str | None = None) -> 
                 source_refs=[GROUND_CONTRACT_REF],
                 confidence="contract",
                 tags=["phase1", "memory-spine"],
+                authority_state="ground_contract",
+                review_state="reviewed",
+                support_state="contract",
             )
         ],
         "next_actions": next_actions,
@@ -283,6 +373,9 @@ def build_seed_research_thread(topic: str, *, created_at: str | None = None) -> 
                 source_refs=[GROUND_CONTRACT_REF],
                 confidence="contract",
                 tags=["kg-preview", "no-live-mutation"],
+                authority_state="ground_contract",
+                review_state="reviewed",
+                support_state="blocked_until_evidence",
             )
         ],
         "metadata": {
@@ -290,6 +383,8 @@ def build_seed_research_thread(topic: str, *, created_at: str | None = None) -> 
             "first_proof_loop": True,
             "seeded_by": "lab-orchestrator/tools/seed_research_threads.py",
             "contains_literature_claims": False,
+            "authority_model": "research_thread_v2",
+            "object_model": "section_items_with_object_refs",
             "live_store_mutations": [],
         },
     }
@@ -322,6 +417,9 @@ def _seed_next_actions(topic: str, created_at: str) -> list[dict[str, Any]]:
             source_refs=[GROUND_CONTRACT_REF],
             confidence="research_question",
             tags=["phase1", "research-question"],
+            authority_state="ground_contract",
+            review_state="reviewed",
+            support_state="research_question",
         )
         for idx, question in enumerate(questions, start=1)
     ]
@@ -356,3 +454,69 @@ def seed_research_threads(
         "artifacts_dir": str(resolved_artifacts),
         "threads": results,
     }
+
+
+def _normalize_section_item(section: str, item: Any, *, legacy: bool) -> dict[str, Any]:
+    if not isinstance(item, dict):
+        raise ValueError(f"research_thread section item must be an object: {section}")
+    normalized = copy.deepcopy(item)
+    item_id = normalized.get("id")
+    status = normalized.get("status", "")
+    confidence = normalized.get("confidence")
+    source_refs = normalized.get("source_refs", [])
+    if not isinstance(source_refs, list):
+        source_refs = []
+
+    normalized.setdefault("object_type", SECTION_OBJECT_TYPES.get(section, section))
+    if isinstance(item_id, str) and item_id.strip():
+        normalized.setdefault("object_ref", f"{section}:{item_id}")
+    else:
+        normalized.setdefault("object_ref", "")
+    normalized.setdefault("authority_state", _default_authority_state(normalized))
+    normalized.setdefault("review_state", _default_review_state(status))
+    normalized.setdefault("support_state", confidence or _default_support_state(section, normalized))
+    normalized.setdefault("artifact_refs", [])
+    normalized.setdefault("related_object_refs", [])
+
+    provenance = normalized.get("provenance", {})
+    if not isinstance(provenance, dict):
+        provenance = {}
+    provenance.setdefault("source_refs", list(source_refs))
+    if legacy:
+        provenance.setdefault("schema_upgrade", "v1_to_v2_compatible_loader")
+    normalized["provenance"] = provenance
+    return normalized
+
+
+def _infer_object_type(item_id: str) -> str:
+    prefix = item_id.split(".", 1)[0]
+    return prefix or "research_object"
+
+
+def _object_ref_from_item_id(item_id: str) -> str:
+    object_type = _infer_object_type(item_id)
+    return f"{object_type}:{item_id}"
+
+
+def _default_authority_state(item: dict[str, Any]) -> str:
+    if item.get("confidence") == "contract":
+        return "ground_contract"
+    if item.get("status") in {"accepted", "completed"}:
+        return "reviewed_artifact"
+    return "thread_local"
+
+
+def _default_review_state(status: Any) -> str:
+    if status in {"accepted", "completed"}:
+        return "reviewed"
+    if isinstance(status, str) and status.startswith("blocked"):
+        return "blocked"
+    return "pending_review"
+
+
+def _default_support_state(section: str, item: dict[str, Any]) -> str:
+    if section == "kg_ingest_preview" and str(item.get("status", "")).startswith("blocked"):
+        return "blocked_until_evidence"
+    if section in {"next_actions", "idea_candidates"}:
+        return "needs_evidence"
+    return "not_evaluated"

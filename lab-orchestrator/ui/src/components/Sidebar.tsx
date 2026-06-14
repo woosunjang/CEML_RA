@@ -6,6 +6,7 @@ import { Session } from "@/lib/types";
 
 const NAV_ITEMS = [
   { href: "/", icon: "💬", label: "채팅" },
+  { href: "/research", icon: "🧭", label: "연구 리뷰" },
   { href: "/dashboard", icon: "📊", label: "대시보드" },
   { href: "/knowledge", icon: "🕸️", label: "지식그래프" },
 ];

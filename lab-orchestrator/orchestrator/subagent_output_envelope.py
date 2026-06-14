@@ -19,8 +19,10 @@ from orchestrator.research_loop_packet import CONTRACT_REF, SUBAGENT_ROLE_CATALO
 from orchestrator.research_thread import resolve_artifacts_dir, utc_now
 
 
-SCHEMA_VERSION = 1
-ENVELOPE_PLANNER_NAME = "subagent_output_envelope_v1"
+LOOP_PACKET_SCHEMA_VERSION = 1
+ENVELOPE_SCHEMA_VERSION = 2
+SCHEMA_VERSION = ENVELOPE_SCHEMA_VERSION
+ENVELOPE_PLANNER_NAME = "subagent_output_envelope_v2"
 SUBAGENT_OUTPUT_ENVELOPES_DIR = "subagent_output_envelopes"
 
 ROLE_OUTPUT_TYPES: dict[str, tuple[str, ...]] = {
@@ -94,7 +96,7 @@ def validate_loop_packet(packet: dict[str, Any]) -> None:
     missing = [field for field in required if field not in packet]
     if missing:
         raise ValueError(f"loop packet missing required fields: {', '.join(missing)}")
-    if packet["schema_version"] != SCHEMA_VERSION:
+    if packet["schema_version"] != LOOP_PACKET_SCHEMA_VERSION:
         raise ValueError(f"unsupported loop packet schema_version: {packet['schema_version']}")
     for field in ("packet_id", "thread_id", "topic", "research_state"):
         _required_nonempty_string(packet, field, "loop packet")
@@ -184,6 +186,7 @@ def build_subagent_output_envelope(
                 "새 문헌 claim, 수치, citation, 실험 결과를 생성하지 않는다."
             ),
         },
+        "context_bundle": loop_packet.get("context_bundle", {}),
         "evidence_boundaries": build_evidence_boundaries(role=role, output_type=output_type),
         "missing_evidence": _review_items(normalized_missing, default="명시 입력된 missing evidence 없음"),
         "counterarguments": _review_items(normalized_counterarguments, default="명시 입력된 counterargument 없음"),
@@ -193,6 +196,19 @@ def build_subagent_output_envelope(
         ),
         "artifact_candidates": _review_items(normalized_artifacts, default="명시 입력된 artifact 후보 없음"),
         "loop_packet_artifact_candidates": loop_packet.get("artifact_candidates", []),
+        "critique_gate": build_critique_gate(
+            role=role,
+            output_type=output_type,
+            missing_evidence=normalized_missing,
+            counterarguments=normalized_counterarguments,
+            failure_modes=normalized_failure_modes,
+        ),
+        "artifact_co_production": build_artifact_co_production(
+            role=role,
+            output_type=output_type,
+            artifact_candidates=normalized_artifacts,
+            loop_packet_artifact_candidates=loop_packet.get("artifact_candidates", []),
+        ),
         "recommended_thread_patch": thread_patch_preview,
         "stop_conditions": build_stop_conditions(role=role),
         "live_store_mutations": [],
@@ -316,6 +332,85 @@ def build_stop_conditions(*, role: str) -> list[str]:
     return conditions
 
 
+def build_critique_gate(
+    *,
+    role: str,
+    output_type: str,
+    missing_evidence: list[str],
+    counterarguments: list[str],
+    failure_modes: list[str],
+) -> dict[str, Any]:
+    findings = []
+    if missing_evidence:
+        findings.append({
+            "id": "critique.missing_evidence",
+            "status": "requires_review",
+            "text": "명시된 missing evidence가 해소되기 전에는 claim 승격을 금지한다.",
+        })
+    if counterarguments:
+        findings.append({
+            "id": "critique.counterarguments_present",
+            "status": "requires_review",
+            "text": "반론이 남아 있으므로 artifact나 KG fact 승격 전에 Coordinator 검토가 필요하다.",
+        })
+    if failure_modes:
+        findings.append({
+            "id": "critique.failure_modes_present",
+            "status": "requires_review",
+            "text": "실패 모드가 남아 있으므로 next action 또는 stop condition으로 되돌려야 한다.",
+        })
+    if role != "Evidence Critic" and output_type not in {"evidence_boundary_preview", "counterargument_review"}:
+        findings.append({
+            "id": "critique.evidence_critic_required",
+            "status": "required_before_promotion",
+            "text": "이 envelope 출력은 Evidence Critic 검토 없이 확정 기억으로 승격될 수 없다.",
+        })
+    status = "requires_review" if findings else "preview_passed"
+    return {
+        "status": status,
+        "role": role,
+        "output_type": output_type,
+        "findings": findings,
+        "allows_thread_mutation": False,
+        "allows_kg_ingest": False,
+        "live_store_mutations": [],
+    }
+
+
+def build_artifact_co_production(
+    *,
+    role: str,
+    output_type: str,
+    artifact_candidates: list[str],
+    loop_packet_artifact_candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
+    candidates = [
+        {
+            "id": f"artifact.explicit.{idx}",
+            "text": item,
+            "status": "candidate",
+            "source": "explicit_input",
+        }
+        for idx, item in enumerate(artifact_candidates, start=1)
+    ]
+    for idx, item in enumerate(loop_packet_artifact_candidates, start=1):
+        candidates.append({
+            "id": f"artifact.loop_packet.{idx}",
+            "text": item.get("purpose", item.get("artifact_type", "artifact candidate")),
+            "status": "candidate",
+            "source": "loop_packet",
+            "artifact_type": item.get("artifact_type"),
+        })
+    return {
+        "status": "preview_only",
+        "role": role,
+        "output_type": output_type,
+        "candidates": candidates,
+        "requires_thread_patch_preview": True,
+        "live_store_mutations": [],
+    }
+
+
 def build_thread_patch_preview(
     *,
     thread_id: str,
@@ -328,68 +423,105 @@ def build_thread_patch_preview(
     failure_modes: list[str],
     artifact_candidates: list[str],
 ) -> dict[str, Any]:
+    append: dict[str, list[dict[str, Any]]] = {
+        "decisions": [
+            {
+                "id": f"decision.subagent_output_envelope.{envelope_id}",
+                "text": (
+                    f"`{role}` 역할의 `{output_type}` 결과를 Subagent Output Envelope v2 형태로 "
+                    "Coordinator에 반환할 수 있게 되었다. 이 결정은 새 연구 내용을 확정하지 않고 "
+                    "역할 출력, 근거 경계, critique gate, patch preview를 같은 research_thread 흐름에 연결하기 위한 것이다."
+                ),
+                "status": "proposed",
+                "confidence": ENVELOPE_PLANNER_NAME,
+                "source_refs": [CONTRACT_REF],
+                "tags": ["subagent-output-envelope", "research-loop", _slug(role)],
+                "review_state": "pending_review",
+                "support_state": "coordination_boundary",
+                "metadata": {
+                    "envelope_id": envelope_id,
+                    "role": role,
+                    "output_type": output_type,
+                    "live_store_mutations": [],
+                },
+            }
+        ],
+        "failure_modes": [
+            {
+                "id": f"failure_mode.subagent_output_envelope.{envelope_id}.overclaiming",
+                "text": "Subagent output envelope가 입력 summary를 확정 evidence나 새 research claim처럼 포장하면 실패한다.",
+                "status": "open",
+                "confidence": ENVELOPE_PLANNER_NAME,
+                "source_refs": [CONTRACT_REF],
+                "tags": ["subagent-output-envelope", "anti-overclaim"],
+                "review_state": "pending_review",
+                "support_state": "risk_boundary",
+                "metadata": {
+                    "envelope_id": envelope_id,
+                    "missing_evidence": missing_evidence,
+                    "counterarguments": counterarguments,
+                    "failure_modes": failure_modes,
+                    "live_store_mutations": [],
+                },
+            }
+        ],
+        "next_actions": [
+            {
+                "id": f"next_action.subagent_output_envelope.{envelope_id}.coordinator_review",
+                "text": (
+                    f"Coordinator가 `{role}` envelope를 검토해 실제 thread patch 적용, durable artifact 작성, "
+                    "또는 stop condition 중 하나로 다음 단계를 결정한다."
+                ),
+                "status": "open",
+                "confidence": ENVELOPE_PLANNER_NAME,
+                "source_refs": [CONTRACT_REF],
+                "tags": ["subagent-output-envelope", "coordinator-review"],
+                "review_state": "pending_review",
+                "support_state": "next_action",
+                "metadata": {
+                    "envelope_id": envelope_id,
+                    "summary": summary,
+                    "artifact_candidates": artifact_candidates,
+                    "live_store_mutations": [],
+                },
+            }
+        ],
+    }
+    if counterarguments:
+        append["counterarguments"] = [
+            {
+                "id": f"counterargument.subagent_output_envelope.{envelope_id}.{idx}",
+                "text": item,
+                "status": "open",
+                "confidence": ENVELOPE_PLANNER_NAME,
+                "source_refs": [CONTRACT_REF],
+                "tags": ["subagent-output-envelope", "critique-gate"],
+                "review_state": "pending_review",
+                "support_state": "needs_evidence",
+                "metadata": {"envelope_id": envelope_id, "live_store_mutations": []},
+            }
+            for idx, item in enumerate(counterarguments, start=1)
+        ]
+    if missing_evidence:
+        append["failure_modes"].extend([
+            {
+                "id": f"failure_mode.subagent_output_envelope.{envelope_id}.missing_evidence.{idx}",
+                "text": item,
+                "status": "open",
+                "confidence": ENVELOPE_PLANNER_NAME,
+                "source_refs": [CONTRACT_REF],
+                "tags": ["subagent-output-envelope", "missing-evidence"],
+                "review_state": "pending_review",
+                "support_state": "needs_evidence",
+                "metadata": {"envelope_id": envelope_id, "live_store_mutations": []},
+            }
+            for idx, item in enumerate(missing_evidence, start=1)
+        ])
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "thread_id": thread_id,
         "research_state": "subagent_output_envelope_planned",
-        "append": {
-            "decisions": [
-                {
-                    "id": f"decision.subagent_output_envelope.{envelope_id}",
-                    "text": (
-                        f"`{role}` 역할의 `{output_type}` 결과를 Subagent Output Envelope v1 형태로 "
-                        "Coordinator에 반환할 수 있게 되었다. 이 결정은 새 연구 내용을 확정하지 않고 "
-                        "역할 출력, 근거 경계, patch preview를 같은 research_thread 흐름에 연결하기 위한 것이다."
-                    ),
-                    "status": "proposed",
-                    "confidence": ENVELOPE_PLANNER_NAME,
-                    "source_refs": [CONTRACT_REF],
-                    "tags": ["subagent-output-envelope", "research-loop", _slug(role)],
-                    "metadata": {
-                        "envelope_id": envelope_id,
-                        "role": role,
-                        "output_type": output_type,
-                        "live_store_mutations": [],
-                    },
-                }
-            ],
-            "failure_modes": [
-                {
-                    "id": f"failure_mode.subagent_output_envelope.{envelope_id}.overclaiming",
-                    "text": "Subagent output envelope가 입력 summary를 확정 evidence나 새 research claim처럼 포장하면 실패한다.",
-                    "status": "open",
-                    "confidence": ENVELOPE_PLANNER_NAME,
-                    "source_refs": [CONTRACT_REF],
-                    "tags": ["subagent-output-envelope", "anti-overclaim"],
-                    "metadata": {
-                        "envelope_id": envelope_id,
-                        "missing_evidence": missing_evidence,
-                        "counterarguments": counterarguments,
-                        "failure_modes": failure_modes,
-                        "live_store_mutations": [],
-                    },
-                }
-            ],
-            "next_actions": [
-                {
-                    "id": f"next_action.subagent_output_envelope.{envelope_id}.coordinator_review",
-                    "text": (
-                        f"Coordinator가 `{role}` envelope를 검토해 실제 thread patch 적용, durable artifact 작성, "
-                        "또는 stop condition 중 하나로 다음 단계를 결정한다."
-                    ),
-                    "status": "open",
-                    "confidence": ENVELOPE_PLANNER_NAME,
-                    "source_refs": [CONTRACT_REF],
-                    "tags": ["subagent-output-envelope", "coordinator-review"],
-                    "metadata": {
-                        "envelope_id": envelope_id,
-                        "summary": summary,
-                        "artifact_candidates": artifact_candidates,
-                        "live_store_mutations": [],
-                    },
-                }
-            ],
-        },
+        "append": append,
         "metadata": {
             "last_subagent_output_envelope": {
                 "envelope_id": envelope_id,
@@ -440,6 +572,14 @@ def render_subagent_output_envelope_markdown(envelope: dict[str, Any]) -> str:
     _append_review_section(lines, envelope["failure_modes"])
     lines.extend(["", "## Artifact Candidates", ""])
     _append_review_section(lines, envelope["artifact_candidates"])
+    lines.extend(["", "## Critique Gate", ""])
+    lines.append(f"- Status: `{envelope['critique_gate']['status']}`")
+    for finding in envelope["critique_gate"]["findings"]:
+        lines.append(f"- `{finding['id']}` [{finding['status']}] {finding['text']}")
+    lines.extend(["", "## Artifact Co-production", ""])
+    lines.append(f"- Status: `{envelope['artifact_co_production']['status']}`")
+    for candidate in envelope["artifact_co_production"]["candidates"]:
+        lines.append(f"- `{candidate['id']}` [{candidate['status']}] {candidate['text']}")
     lines.extend(["", "## Stop Conditions", ""])
     for condition in envelope["stop_conditions"]:
         lines.append(f"- {condition}")

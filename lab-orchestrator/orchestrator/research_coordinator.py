@@ -12,6 +12,9 @@ import copy
 from pathlib import Path
 from typing import Any
 
+from orchestrator.research_context_bundle import build_research_context_bundle
+from orchestrator.research_loop_packet import build_research_loop_packet
+from orchestrator.subagent_output_envelope import build_subagent_output_envelope
 from orchestrator.research_thread import (
     DEFAULT_SEED_TOPICS,
     load_research_thread,
@@ -250,6 +253,41 @@ def run_coordinator_dry_run_for_thread(
     )
     after_scout = apply_scout_thread_patch(original, scout_patch)
     updated, coordinator_patch = _apply_coordinator_stages(after_scout, created_at=created_at)
+    context_bundle = build_research_context_bundle(
+        research_thread=original,
+        trigger_type="automatic",
+        trigger_summary=f"Coordinator dry-run: {query}",
+        created_at=created_at,
+    )
+    loop_packet = build_research_loop_packet(
+        research_thread=original,
+        trigger_type="automatic",
+        trigger_summary=f"Coordinator dry-run: {query}",
+        created_at=created_at,
+    )
+    evidence_critic_envelope = build_subagent_output_envelope(
+        loop_packet=loop_packet,
+        role="Evidence Critic",
+        output_type="evidence_boundary_preview",
+        summary=(
+            "Coordinator dry-run 결과는 source metadata와 deterministic synthesis를 검토 대상으로만 다루며, "
+            "확정 claim이나 KG fact로 승격하지 않는다."
+        ),
+        loop_packet_ref=f"inline:{loop_packet['packet_id']}",
+        missing_evidence=[
+            "Scout metadata 또는 deterministic summary만으로는 문헌 claim, 수치, citation을 확정할 수 없다."
+        ],
+        counterarguments=[
+            "Coordinator dry-run이 만든 idea candidate는 연구 가치 후보일 뿐 계산, 실험, 제안서 준비 완료 신호가 아니다."
+        ],
+        failure_modes=[
+            "dry-run output을 승인 없이 live KG/RAG/Slack state로 승격하면 실패한다."
+        ],
+        artifact_candidates=[
+            "Coordinator review note와 thread patch preview를 같은 research_thread 검토 흐름에 남긴다."
+        ],
+        created_at=created_at,
+    )
 
     changed = bool(scout_patch["source_signals"] or scout_patch["evidence"] or coordinator_patch["changed"])
     status = "updated" if execute and changed else "would_update" if changed else "no_changes"
@@ -277,6 +315,10 @@ def run_coordinator_dry_run_for_thread(
             },
             "next_action": {"next_actions_added": coordinator_patch["added"]["next_actions"]},
         },
+        "context_bundle": context_bundle,
+        "loop_packet": loop_packet,
+        "evidence_critic_envelope": evidence_critic_envelope,
+        "merged_thread_patch_preview": evidence_critic_envelope["recommended_thread_patch"],
         "preview_markdown": render_research_thread_markdown(updated),
         "live_store_mutations": [],
     }

@@ -72,6 +72,73 @@ class ResearchThreadApiTests(unittest.TestCase):
         self.assertEqual(payload["source"], "artifact")
         self.assertIn("# Research Thread: rare_earth_magnets", payload["markdown"])
 
+    def test_get_research_context_bundle_preview(self):
+        client, _ = self._client_with_seeded_threads()
+
+        response = client.get(
+            "/research/threads/rare_earth_magnets/context",
+            params={"trigger_type": "on_demand", "trigger_summary": "proposal discussion"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["read_only"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertEqual(payload["bundle"]["trigger"]["type"], "on_demand")
+        self.assertEqual(payload["bundle"]["activation_previews"]["kg_ingest_preview"]["status"], "preview_only")
+
+    def test_preview_research_loop_packet_api(self):
+        client, _ = self._client_with_seeded_threads()
+
+        response = client.post(
+            "/research/loops/preview",
+            json={
+                "thread_id": "rare_earth_magnets",
+                "trigger_type": "on_demand",
+                "trigger_summary": "proposal discussion",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["read_only"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertIn("context_bundle", payload["packet"])
+        self.assertEqual(payload["packet"]["thread_patch_preview"]["schema_version"], 2)
+
+    def test_preview_subagent_output_envelope_api(self):
+        client, _ = self._client_with_seeded_threads()
+        packet = client.post(
+            "/research/loops/preview",
+            json={
+                "thread_id": "rare_earth_magnets",
+                "trigger_type": "on_demand",
+                "trigger_summary": "proposal discussion",
+            },
+        ).json()["packet"]
+
+        response = client.post(
+            "/research/subagent-envelopes/preview",
+            json={
+                "loop_packet": packet,
+                "role": "Evidence Critic",
+                "output_type": "evidence_boundary_preview",
+                "summary": "근거 경계를 검토하되 확정 claim을 만들지 않는다.",
+                "missing_evidence": ["primary source 확인 필요"],
+                "counterarguments": ["요약만으로는 연구 품질을 증명하지 못한다."],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["read_only"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertEqual(payload["envelope"]["schema_version"], 2)
+        self.assertEqual(payload["envelope"]["critique_gate"]["status"], "requires_review")
+
     def test_missing_and_invalid_thread_ids(self):
         client, _ = self._client_with_seeded_threads()
 

@@ -116,6 +116,15 @@ class ResearchCoordinatorTests(unittest.TestCase):
             self.assertTrue(payload["dry_run"])
             self.assertEqual([item["thread_id"] for item in payload["threads"]], list(DEFAULT_SEED_TOPICS))
             self.assertEqual([item["status"] for item in payload["threads"]], ["would_update", "would_update"])
+            for result in payload["threads"]:
+                self.assertIn("context_bundle", result)
+                self.assertIn("loop_packet", result)
+                self.assertIn("evidence_critic_envelope", result)
+                self.assertIn("merged_thread_patch_preview", result)
+                self.assertEqual(result["context_bundle"]["live_store_mutations"], [])
+                self.assertEqual(result["loop_packet"]["live_store_mutations"], [])
+                self.assertEqual(result["evidence_critic_envelope"]["critique_gate"]["status"], "requires_review")
+                self.assertEqual(result["merged_thread_patch_preview"]["schema_version"], 2)
             for topic in DEFAULT_SEED_TOPICS:
                 self.assertEqual(before[topic], load_research_thread(topic, artifacts_dir=artifacts))
             self.assertEqual(self._paper_count(db_path), 2)

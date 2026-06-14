@@ -1,4 +1,4 @@
-import { ChatRequest, ChatResponse, AgentInfo, Session, Message } from "./types";
+import { ChatRequest, ChatResponse, AgentInfo, Session } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -172,4 +172,143 @@ export async function deleteSession(conversationId: string): Promise<void> {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete session");
+}
+
+// ---- Research Thread Review ----
+
+export interface ResearchThreadListItem {
+  thread_id: string;
+  topic: string;
+  research_state: string;
+  updated_at: string;
+  json_path: string;
+  markdown_path: string;
+}
+
+export interface ResearchObjectPreview {
+  section: string;
+  id: string;
+  object_ref: string;
+  text: string;
+  status: string;
+  authority_state: string;
+  review_state: string;
+  support_state: string;
+  source_refs: string[];
+  artifact_refs: string[];
+  related_object_refs: string[];
+}
+
+export interface ResearchContextBundle {
+  bundle_id: string;
+  thread_id: string;
+  topic: string;
+  research_state: string;
+  trigger: { type: string; summary: string };
+  thread_summary: {
+    section_counts: Record<string, number>;
+    open_next_actions: ResearchObjectPreview[];
+    recent_decisions: ResearchObjectPreview[];
+  };
+  relevant_objects: ResearchObjectPreview[];
+  evidence_gaps: ResearchObjectPreview[];
+  activation_previews: Record<string, unknown>;
+  live_store_mutations: unknown[];
+}
+
+export interface ResearchLoopPacket {
+  packet_id: string;
+  thread_id: string;
+  trigger: { type: string; summary: string };
+  context_bundle: ResearchContextBundle;
+  selected_roles: { role: string; reason: string; output: string; must_not: string }[];
+  thread_patch_preview: Record<string, unknown>;
+  live_store_mutations: unknown[];
+}
+
+export interface SubagentOutputEnvelope {
+  envelope_id: string;
+  thread_id: string;
+  role: string;
+  output_type: string;
+  critique_gate: {
+    status: string;
+    findings: { id: string; status: string; text: string }[];
+    live_store_mutations: unknown[];
+  };
+  artifact_co_production: {
+    status: string;
+    candidates: { id: string; status: string; text: string }[];
+    live_store_mutations: unknown[];
+  };
+  recommended_thread_patch: Record<string, unknown>;
+  live_store_mutations: unknown[];
+}
+
+export async function fetchResearchThreads(): Promise<{
+  threads: ResearchThreadListItem[];
+  count: number;
+  read_only: boolean;
+}> {
+  const res = await fetch(`${API_BASE}/research/threads`);
+  if (!res.ok) throw new Error("Failed to fetch research threads");
+  return res.json();
+}
+
+export async function fetchResearchContextBundle(threadId: string): Promise<{
+  bundle: ResearchContextBundle;
+  read_only: boolean;
+  dry_run: boolean;
+  live_store_mutations: unknown[];
+}> {
+  const params = new URLSearchParams({
+    trigger_type: "on_demand",
+    trigger_summary: "UI research review",
+  });
+  const res = await fetch(`${API_BASE}/research/threads/${encodeURIComponent(threadId)}/context?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch research context bundle");
+  return res.json();
+}
+
+export async function previewResearchLoop(threadId: string): Promise<{
+  packet: ResearchLoopPacket;
+  read_only: boolean;
+  dry_run: boolean;
+  live_store_mutations: unknown[];
+}> {
+  const res = await fetch(`${API_BASE}/research/loops/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      thread_id: threadId,
+      trigger_type: "on_demand",
+      trigger_summary: "UI research review",
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to preview research loop");
+  return res.json();
+}
+
+export async function previewEvidenceCriticEnvelope(packet: ResearchLoopPacket): Promise<{
+  envelope: SubagentOutputEnvelope;
+  read_only: boolean;
+  dry_run: boolean;
+  live_store_mutations: unknown[];
+}> {
+  const res = await fetch(`${API_BASE}/research/subagent-envelopes/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      loop_packet: packet,
+      role: "Evidence Critic",
+      output_type: "evidence_boundary_preview",
+      summary: "UI review surface에서 근거 경계와 승격 금지 조건을 확인한다.",
+      missing_evidence: ["UI preview는 source text를 직접 검증하지 않으므로 claim 승격 전에 근거 확인이 필요하다."],
+      counterarguments: ["Review surface 표시만으로 연구 품질이 검증되었다고 볼 수 없다."],
+      failure_modes: ["preview를 approval이나 live ingest로 오해하면 실패한다."],
+      artifact_candidates: ["UI 검토용 research-thread review note 후보"],
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to preview evidence critic envelope");
+  return res.json();
 }

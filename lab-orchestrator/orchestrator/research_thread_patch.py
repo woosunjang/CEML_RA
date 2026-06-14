@@ -12,8 +12,10 @@ from pathlib import Path
 from typing import Any
 
 from orchestrator.research_thread import (
+    SECTION_NAMES,
     load_research_thread,
     make_section_item,
+    normalize_research_thread,
     render_research_thread_markdown,
     research_thread_paths,
     utc_now,
@@ -22,8 +24,10 @@ from orchestrator.research_thread import (
 )
 
 
-PATCH_SCHEMA_VERSION = 1
-PATCHABLE_SECTIONS = ("decisions", "next_actions", "failure_modes")
+PATCH_SCHEMA_VERSION = 2
+SUPPORTED_PATCH_SCHEMA_VERSIONS = (1, 2)
+PATCHABLE_SECTIONS_V1 = ("decisions", "next_actions", "failure_modes")
+PATCHABLE_SECTIONS = SECTION_NAMES
 THREAD_METADATA_KEY = "metadata"
 
 
@@ -83,6 +87,7 @@ def apply_research_thread_patch(
     *,
     created_at: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    thread = normalize_research_thread(thread)
     validate_research_thread(thread)
     _validate_patch_shape(thread["thread_id"], patch)
     now = created_at or utc_now()
@@ -123,9 +128,26 @@ def apply_research_thread_patch(
                 raise ValueError(f"cannot update missing item id: {section}.{item_id}")
             target = by_id[item_id]
             changed = False
-            if "status" in raw_item and raw_item["status"] != target.get("status"):
-                target["status"] = _required_nonempty_string(raw_item, "status", f"updates.{section}.{item_id}")
-                changed = True
+            for text_field in (
+                "text",
+                "status",
+                "authority_state",
+                "review_state",
+                "support_state",
+            ):
+                if text_field in raw_item and raw_item[text_field] != target.get(text_field):
+                    target[text_field] = _required_nonempty_string(
+                        raw_item,
+                        text_field,
+                        f"updates.{section}.{item_id}",
+                    )
+                    changed = True
+            for list_field in ("source_refs", "tags", "artifact_refs", "related_object_refs"):
+                if list_field in raw_item:
+                    values = _optional_string_list(raw_item[list_field], f"updates.{section}.{item_id}.{list_field}")
+                    if values != target.get(list_field):
+                        target[list_field] = values
+                        changed = True
             if "metadata" in raw_item:
                 metadata = raw_item["metadata"]
                 if not isinstance(metadata, dict):
@@ -134,6 +156,15 @@ def apply_research_thread_patch(
                 merged.update(metadata)
                 if merged != target.get("metadata", {}):
                     target["metadata"] = merged
+                    changed = True
+            if "provenance" in raw_item:
+                provenance = raw_item["provenance"]
+                if not isinstance(provenance, dict):
+                    raise ValueError(f"updates.{section}.{item_id}.provenance must be an object")
+                merged_provenance = dict(target.get("provenance", {}))
+                merged_provenance.update(provenance)
+                if merged_provenance != target.get("provenance", {}):
+                    target["provenance"] = merged_provenance
                     changed = True
             if changed:
                 changes["updated"][section] += 1
@@ -158,19 +189,20 @@ def apply_research_thread_patch(
 
 def _validate_patch_shape(thread_id: str, patch: dict[str, Any]) -> None:
     schema_version = patch.get("schema_version", PATCH_SCHEMA_VERSION)
-    if schema_version != PATCH_SCHEMA_VERSION:
+    if schema_version not in SUPPORTED_PATCH_SCHEMA_VERSIONS:
         raise ValueError(f"unsupported research_thread patch schema_version: {schema_version}")
     if "thread_id" in patch and patch["thread_id"] != thread_id:
         raise ValueError(f"patch thread_id does not match target thread: {patch['thread_id']} != {thread_id}")
     if "research_state" in patch:
         _required_nonempty_string(patch, "research_state", "patch")
+    patchable_sections = _patchable_sections_for_schema(schema_version)
     for key in ("append", "updates"):
         value = patch.get(key, {})
         if not isinstance(value, dict):
             raise ValueError(f"{key} must be an object")
         for section, items in value.items():
-            if section not in PATCHABLE_SECTIONS:
-                valid = ", ".join(PATCHABLE_SECTIONS)
+            if section not in patchable_sections:
+                valid = ", ".join(patchable_sections)
                 raise ValueError(f"unsupported patch section: {section}. Valid sections: {valid}")
             if not isinstance(items, list):
                 raise ValueError(f"{key}.{section} must be a list")
@@ -196,6 +228,14 @@ def _coerce_append_item(raw_item: dict[str, Any], *, created_at: str) -> dict[st
         confidence=raw_item.get("confidence"),
         tags=raw_item.get("tags"),
         metadata=raw_item.get("metadata"),
+        object_type=raw_item.get("object_type"),
+        object_ref=raw_item.get("object_ref"),
+        authority_state=raw_item.get("authority_state"),
+        review_state=raw_item.get("review_state"),
+        support_state=raw_item.get("support_state"),
+        artifact_refs=raw_item.get("artifact_refs"),
+        related_object_refs=raw_item.get("related_object_refs"),
+        provenance=raw_item.get("provenance"),
     )
     return item
 
@@ -209,6 +249,23 @@ def _required_nonempty_string(data: dict[str, Any], key: str, context: str) -> s
 
 def _section_ids(thread: dict[str, Any], section: str) -> set[str]:
     return {str(item.get("id")) for item in thread.get(section, [])}
+
+
+def _patchable_sections_for_schema(schema_version: int) -> tuple[str, ...]:
+    if schema_version == 1:
+        return PATCHABLE_SECTIONS_V1
+    return PATCHABLE_SECTIONS
+
+
+def _optional_string_list(value: Any, context: str) -> list[str]:
+    if not isinstance(value, list):
+        raise ValueError(f"{context} must be a list")
+    result = []
+    for idx, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError(f"{context}[{idx}] must be a non-empty string")
+        result.append(item)
+    return result
 
 
 def _has_changes(changes: dict[str, Any]) -> bool:

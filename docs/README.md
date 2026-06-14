@@ -5,10 +5,11 @@ This directory is a small index for current repo-local project truth.
 Read first:
 
 1. [CEML_RA Ground Goal And Phased Rebuild](ceml-ra-ground-goal-and-phases.md)
-2. [Research Loop Contract v1](ceml-ra-research-loop-contract-v1.md)
-3. [Repo operating instructions](../AGENTS.md)
-4. [Current handoff](../.agents/context/HANDOFF.md)
-5. [Task log](../.agents/context/TASK_LOG.md)
+2. [Capability Development Plan v1](ceml-ra-capability-development-plan-v1.md)
+3. [Research Loop Contract v1](ceml-ra-research-loop-contract-v1.md)
+4. [Repo operating instructions](../AGENTS.md)
+5. [Current handoff](../.agents/context/HANDOFF.md)
+6. [Task log](../.agents/context/TASK_LOG.md)
 
 ## Direction Boundary
 
@@ -27,11 +28,22 @@ automation are added.
 
 Current dry-run entrypoints:
 
+- `lab-orchestrator/tools/research_context_bundle_plan.py` builds the shared
+  automatic/on-demand context bundle without mutating live stores.
 - `lab-orchestrator/tools/research_loop_packet_plan.py` plans one research loop
-  without writing research content or mutating live stores.
+  from the shared context bundle without writing research content or mutating
+  live stores.
 - `lab-orchestrator/tools/subagent_output_envelope_plan.py` turns a selected
-  loop-packet role output into a reviewable envelope and thread patch preview
-  without executing subagents or mutating live stores.
+  loop-packet role output into a reviewable envelope, critique gate, artifact
+  candidate preview, and thread patch preview without executing live subagents
+  or mutating live stores.
+
+Read-only review surfaces:
+
+- `GET /research/threads/{thread_id}/context`
+- `POST /research/loops/preview`
+- `POST /research/subagent-envelopes/preview`
+- `lab-orchestrator/ui/src/app/research/page.tsx`
 
 ## Storage Boundary
 

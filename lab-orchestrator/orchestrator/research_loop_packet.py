@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from orchestrator.research_context_bundle import build_research_context_bundle
 from orchestrator.research_thread import (
     load_research_thread,
     resolve_artifacts_dir,
@@ -114,11 +115,17 @@ def build_research_loop_packet(
     generated_at = created_at or utc_now()
     thread_id = research_thread["thread_id"]
     packet_id = build_packet_id(thread_id=thread_id, trigger_type=trigger["type"], trigger_summary=trigger["summary"])
+    context_bundle = build_research_context_bundle(
+        research_thread=research_thread,
+        trigger_type=trigger["type"],
+        trigger_summary=trigger["summary"],
+        created_at=generated_at,
+    )
     selected_roles = select_roles_for_trigger(research_thread, trigger)
-    source_context = build_source_context(research_thread)
+    source_context = build_source_context(research_thread, context_bundle=context_bundle)
     expected_outputs = build_expected_outputs(trigger, selected_roles)
     stop_conditions = build_stop_conditions(trigger)
-    artifact_candidates = build_artifact_candidates(thread_id, trigger)
+    artifact_candidates = build_artifact_candidates(thread_id, trigger, context_bundle)
     thread_patch_preview = build_thread_patch_preview(
         thread_id=thread_id,
         packet_id=packet_id,
@@ -138,6 +145,7 @@ def build_research_loop_packet(
         "trigger": trigger,
         "candidate_roles": list(SUBAGENT_ROLE_CATALOG),
         "selected_roles": selected_roles,
+        "context_bundle": context_bundle,
         "source_context": source_context,
         "expected_outputs": expected_outputs,
         "stop_conditions": stop_conditions,
@@ -218,45 +226,37 @@ def select_roles_for_trigger(research_thread: dict[str, Any], trigger: dict[str,
     return selected
 
 
-def build_source_context(research_thread: dict[str, Any]) -> dict[str, Any]:
-    open_next_actions = [
-        {
-            "id": item["id"],
-            "text": item["text"],
-            "status": item["status"],
-        }
-        for item in research_thread.get("next_actions", [])
-        if item.get("status") == "open"
-    ][:5]
-    latest_decisions = [
-        {
-            "id": item["id"],
-            "text": item["text"],
-            "status": item["status"],
-        }
-        for item in research_thread.get("decisions", [])[-3:]
-    ]
+def build_source_context(
+    research_thread: dict[str, Any],
+    *,
+    context_bundle: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if context_bundle is None:
+        context_bundle = build_research_context_bundle(
+            research_thread=research_thread,
+            trigger_type="automatic",
+            trigger_summary="source context build",
+        )
+    thread_summary = context_bundle["thread_summary"]
     return {
         "thread_id": research_thread["thread_id"],
         "topic": research_thread["topic"],
         "research_state": research_thread["research_state"],
-        "section_counts": {
-            section: len(research_thread.get(section, []))
-            for section in (
-                "source_signals",
-                "claims",
-                "evidence",
-                "counterarguments",
-                "idea_candidates",
-                "failure_modes",
-                "decisions",
-                "next_actions",
-                "kg_ingest_preview",
-            )
-        },
-        "open_next_actions": open_next_actions,
-        "latest_decisions": latest_decisions,
-        "context_boundary": "이 packet은 기존 thread 상태를 요약할 뿐 새 연구 claim이나 evidence를 생성하지 않는다.",
+        "context_bundle_id": context_bundle["bundle_id"],
+        "section_counts": thread_summary["section_counts"],
+        "open_next_actions": thread_summary["open_next_actions"],
+        "latest_decisions": thread_summary["recent_decisions"],
+        "relevant_object_refs": [
+            item["object_ref"]
+            for item in context_bundle.get("relevant_objects", [])
+            if item.get("object_ref")
+        ],
+        "evidence_gap_refs": [
+            item["object_ref"]
+            for item in context_bundle.get("evidence_gaps", [])
+            if item.get("object_ref")
+        ],
+        "context_boundary": context_bundle["context_boundary"],
     }
 
 
@@ -302,8 +302,19 @@ def build_stop_conditions(trigger: dict[str, str]) -> list[str]:
     return conditions
 
 
-def build_artifact_candidates(thread_id: str, trigger: dict[str, str]) -> list[dict[str, str]]:
+def build_artifact_candidates(
+    thread_id: str,
+    trigger: dict[str, str],
+    context_bundle: dict[str, Any],
+) -> list[dict[str, str]]:
     return [
+        {
+            "artifact_type": "research_context_bundle",
+            "recommended_output_dir": "research_context_bundles",
+            "recommended_markdown_name": f"{thread_id}_{trigger['type']}_context_bundle.md",
+            "recommended_json_name": f"{thread_id}_{trigger['type']}_context_bundle.json",
+            "purpose": f"공유 context bundle `{context_bundle['bundle_id']}`를 자동/요청 기반 루프 입력으로 남긴다.",
+        },
         {
             "artifact_type": "research_loop_packet",
             "recommended_output_dir": LOOP_PACKETS_DIR,
@@ -330,7 +341,7 @@ def build_thread_patch_preview(
 ) -> dict[str, Any]:
     role_names = [role["role"] for role in selected_roles]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "thread_id": thread_id,
         "research_state": "loop_packet_planned",
         "append": {
@@ -401,6 +412,7 @@ def render_research_loop_packet_markdown(packet: dict[str, Any]) -> str:
         f"- 생성 시각: `{packet['generated_at']}`",
         f"- Trigger: `{packet['trigger']['type']}`",
         f"- Trigger summary: {packet['trigger']['summary']}",
+        f"- Context Bundle ID: `{packet['context_bundle']['bundle_id']}`",
         "- 라이브 저장소 변경: 없음",
         "",
         "## 목적",
@@ -413,6 +425,8 @@ def render_research_loop_packet_markdown(packet: dict[str, Any]) -> str:
         f"- Topic: `{packet['source_context']['topic']}`",
         f"- Research state: `{packet['source_context']['research_state']}`",
         f"- Context boundary: {packet['source_context']['context_boundary']}",
+        f"- Relevant object refs: {len(packet['source_context'].get('relevant_object_refs', []))}",
+        f"- Evidence gap refs: {len(packet['source_context'].get('evidence_gap_refs', []))}",
         "",
         "### Open Next Actions",
         "",

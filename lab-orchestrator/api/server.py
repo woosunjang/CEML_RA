@@ -194,6 +194,92 @@ async def get_research_thread_markdown(thread_id: str):
     }
 
 
+@app.get("/research/threads/{thread_id}/context")
+async def get_research_thread_context_bundle(
+    thread_id: str,
+    trigger_type: str = "on_demand",
+    trigger_summary: str = "read-only research context review",
+):
+    """Build a read-only Research Context Bundle preview for one thread."""
+    from orchestrator.research_context_bundle import preview_or_write_research_context_bundle
+
+    thread_id = _validate_research_thread_id(thread_id)
+    try:
+        payload = preview_or_write_research_context_bundle(
+            thread_id=thread_id,
+            trigger_type=trigger_type,
+            trigger_summary=trigger_summary,
+            execute=False,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    payload["read_only"] = True
+    return payload
+
+
+@app.post("/research/loops/preview")
+async def preview_research_loop_packet(body: dict = Body(...)):
+    """Build a read-only Research Loop Packet preview without writing artifacts."""
+    from orchestrator.research_loop_packet import preview_or_write_research_loop_packet
+
+    thread_id = _validate_research_thread_id(str(body.get("thread_id", "")))
+    trigger_type = str(body.get("trigger_type", "on_demand"))
+    trigger_summary = str(body.get("trigger_summary", "")).strip()
+    if not trigger_summary:
+        raise HTTPException(status_code=400, detail="trigger_summary is required")
+    try:
+        payload = preview_or_write_research_loop_packet(
+            thread_id=thread_id,
+            trigger_type=trigger_type,
+            trigger_summary=trigger_summary,
+            execute=False,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    payload["read_only"] = True
+    return payload
+
+
+@app.post("/research/subagent-envelopes/preview")
+async def preview_subagent_output_envelope(body: dict = Body(...)):
+    """Build a read-only Subagent Output Envelope preview from an inline loop packet."""
+    from orchestrator.subagent_output_envelope import build_subagent_output_envelope, render_subagent_output_envelope_markdown
+
+    loop_packet = body.get("loop_packet")
+    if not isinstance(loop_packet, dict):
+        raise HTTPException(status_code=400, detail="loop_packet object is required")
+    try:
+        envelope = build_subagent_output_envelope(
+            loop_packet=loop_packet,
+            role=str(body.get("role", "")),
+            output_type=str(body.get("output_type", "")),
+            summary=str(body.get("summary", "")),
+            loop_packet_ref="inline:api-preview",
+            missing_evidence=body.get("missing_evidence"),
+            counterarguments=body.get("counterarguments"),
+            failure_modes=body.get("failure_modes"),
+            artifact_candidates=body.get("artifact_candidates"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        "schema_version": envelope["schema_version"],
+        "status": "would_write",
+        "dry_run": True,
+        "thread_id": envelope["thread_id"],
+        "loop_packet_id": envelope["loop_packet_id"],
+        "envelope_id": envelope["envelope_id"],
+        "envelope": envelope,
+        "preview_markdown": render_subagent_output_envelope_markdown(envelope),
+        "live_store_mutations": [],
+        "read_only": True,
+    }
+
+
 @app.get("/workspaces")
 async def list_workspaces():
     """List available workspaces."""
