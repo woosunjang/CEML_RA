@@ -1,5 +1,36 @@
 # Task Log
 
+## 2026-06-14 — Requested residual Codex memory cleanup
+
+**Status:** Cleanup note filed; memory-layer refresh still controls generated
+memory Markdown/index updates.
+
+Created the allowed ad-hoc memory update note:
+
+```text
+/Users/woosun/.codex/memories/extensions/ad_hoc/notes/20260614191837-ceml-ra-residual-memory-cleanup.md
+```
+
+The note asks the memory layer to remove residual stale CEML_RA anchors that
+still appear in default retrieval or reusable knowledge, including old
+`docs/ceml-ra-2week-research-value-cycle.md` / `docs/artifact-runtime-boundary.md`
+keywords, old 2-week/RQF plans, old autonomy/runtime/status work, rare-earth
+proposal follow-ons, HRE/descriptor table suggestions, Work Package Planner
+output, and drift-prone commit/branch status facts.
+
+Current intended memory behavior: for CEML_RA, default to repo-local truth
+(`AGENTS.md`, `.agents/context/HANDOFF.md`, `.agents/context/TASK_LOG.md`,
+`.agents/context/REMOTE_ENVIRONMENT.md`,
+`docs/ceml-ra-ground-goal-and-phases.md`,
+`docs/ceml-ra-research-loop-contract-v1.md`, current git state, and the user's
+latest instruction). Preserve only durable preferences such as integrated
+research colleague direction, shared `research_thread` spine, Coordinator plus
+subagents, Korean-first reviewable outputs, dry-run-first boundaries, and
+`live_store_mutations: []`.
+
+No repo source code, runtime services, Slack, Scout DB, Qdrant, Neo4j, Graphiti,
+KG/RAG, durable artifact root, or live store state was mutated.
+
 ## 2026-06-14 — Promoted Subagent Output Envelope branch locally
 
 **Status:** Complete locally on `main`.

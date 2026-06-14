@@ -39,14 +39,15 @@ clean context before feature work.
   `0a5b274` because push requires explicit user approval.
 - The prior linear branch stack has been promoted to `main`, pushed to GitHub,
   and local checkpoint branches were removed with normal `git branch -d`.
-- Clean Codex memory Markdown/index files when the environment permits direct
-  memory maintenance:
-  - `/Users/woosun/.codex/memories/memory_summary.md`
-  - `/Users/woosun/.codex/memories/MEMORY.md`
-- Remove stale CEML_RA memory references to old 2-week/RQF plans, old
-  autonomy/runtime work, rare-earth proposal follow-ons, HRE table suggestions,
-  descriptor table suggestions, and Work Package Planner output as an implied
-  next step.
+- Codex memory cleanup was requested through the allowed ad-hoc memory update
+  note:
+  `/Users/woosun/.codex/memories/extensions/ad_hoc/notes/20260614191837-ceml-ra-residual-memory-cleanup.md`.
+  It asks the memory layer to remove residual stale CEML_RA references to old
+  2-week/RQF plans, old autonomy/runtime work, rare-earth proposal follow-ons,
+  HRE table suggestions, descriptor table suggestions, Work Package Planner
+  output, and drift-prone commit/branch facts as implied next steps.
+- After the memory layer refreshes, spot-check `memory_summary.md` and
+  `MEMORY.md` for the residual stale anchors above.
 
 ## Current Code Boundary
 
