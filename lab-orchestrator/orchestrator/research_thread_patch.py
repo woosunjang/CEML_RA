@@ -191,6 +191,8 @@ def _validate_patch_shape(thread_id: str, patch: dict[str, Any]) -> None:
     schema_version = patch.get("schema_version", PATCH_SCHEMA_VERSION)
     if schema_version not in SUPPORTED_PATCH_SCHEMA_VERSIONS:
         raise ValueError(f"unsupported research_thread patch schema_version: {schema_version}")
+    if patch.get("live_store_mutations", []) != []:
+        raise ValueError("research_thread patch cannot request live_store_mutations")
     if "thread_id" in patch and patch["thread_id"] != thread_id:
         raise ValueError(f"patch thread_id does not match target thread: {patch['thread_id']} != {thread_id}")
     if "research_state" in patch:

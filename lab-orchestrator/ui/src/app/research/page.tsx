@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import {
+  applyResearchThreadPatch,
   checkHealth,
   fetchResearchContextBundle,
   fetchResearchThreads,
   previewEvidenceCriticEnvelope,
+  previewResearchThreadPatch,
   previewResearchLoop,
+  rejectResearchThreadPatch,
   ResearchContextBundle,
   ResearchLoopPacket,
   ResearchObjectPreview,
+  ResearchPatchReviewResponse,
   ResearchThreadListItem,
   SubagentOutputEnvelope,
 } from "@/lib/api";
@@ -64,8 +68,34 @@ export default function ResearchReviewPage() {
   const [contextBundle, setContextBundle] = useState<ResearchContextBundle | null>(null);
   const [loopPacket, setLoopPacket] = useState<ResearchLoopPacket | null>(null);
   const [envelope, setEnvelope] = useState<SubagentOutputEnvelope | null>(null);
+  const [patchTextOverride, setPatchTextOverride] = useState<string | null>(null);
+  const [patchActionLoading, setPatchActionLoading] = useState<"preview" | "apply" | "reject" | null>(null);
+  const [patchError, setPatchError] = useState<string | null>(null);
+  const [patchReviewResult, setPatchReviewResult] = useState<ResearchPatchReviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadReview = useCallback(async (threadId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [contextPayload, loopPayload] = await Promise.all([
+        fetchResearchContextBundle(threadId),
+        previewResearchLoop(threadId),
+      ]);
+      const envelopePayload = await previewEvidenceCriticEnvelope(loopPayload.packet);
+      setContextBundle(contextPayload.bundle);
+      setLoopPacket(loopPayload.packet);
+      setEnvelope(envelopePayload.envelope);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "연구 리뷰 preview를 만들지 못했습니다.");
+      setContextBundle(null);
+      setLoopPacket(null);
+      setEnvelope(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -92,34 +122,58 @@ export default function ResearchReviewPage() {
 
   useEffect(() => {
     if (!selectedThreadId || !online) return;
-    const loadReview = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [contextPayload, loopPayload] = await Promise.all([
-          fetchResearchContextBundle(selectedThreadId),
-          previewResearchLoop(selectedThreadId),
-        ]);
-        const envelopePayload = await previewEvidenceCriticEnvelope(loopPayload.packet);
-        setContextBundle(contextPayload.bundle);
-        setLoopPacket(loopPayload.packet);
-        setEnvelope(envelopePayload.envelope);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "연구 리뷰 preview를 만들지 못했습니다.");
-        setContextBundle(null);
-        setLoopPacket(null);
-        setEnvelope(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadReview();
-  }, [selectedThreadId, online]);
+    void (async () => {
+      await loadReview(selectedThreadId);
+    })();
+  }, [selectedThreadId, online, loadReview]);
 
   const selectedThread = useMemo(
     () => threads.find((thread) => thread.thread_id === selectedThreadId),
     [threads, selectedThreadId],
   );
+
+  const recommendedPatchText = useMemo(
+    () => (envelope ? JSON.stringify(envelope.recommended_thread_patch, null, 2) : ""),
+    [envelope],
+  );
+  const patchText = patchTextOverride ?? recommendedPatchText;
+
+  const parsedPatch = useMemo((): { patch: Record<string, unknown> | null; error: string | null } => {
+    try {
+      const parsed: unknown = JSON.parse(patchText);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return { patch: null, error: "patch JSON은 object여야 합니다." };
+      }
+      return { patch: parsed as Record<string, unknown>, error: null };
+    } catch (err) {
+      return { patch: null, error: err instanceof Error ? err.message : "patch JSON을 파싱하지 못했습니다." };
+    }
+  }, [patchText]);
+
+  const handlePatchAction = async (action: "preview" | "apply" | "reject") => {
+    if (!selectedThreadId || !parsedPatch.patch) {
+      setPatchError(parsedPatch.error || "patch JSON을 확인해 주세요.");
+      return;
+    }
+    setPatchActionLoading(action);
+    setPatchError(null);
+    try {
+      const result = action === "preview"
+        ? await previewResearchThreadPatch(selectedThreadId, parsedPatch.patch)
+        : action === "apply"
+          ? await applyResearchThreadPatch(selectedThreadId, parsedPatch.patch)
+          : await rejectResearchThreadPatch(selectedThreadId, parsedPatch.patch);
+      if (action === "apply") {
+        await loadReview(selectedThreadId);
+        setPatchTextOverride(null);
+      }
+      setPatchReviewResult(result);
+    } catch (err) {
+      setPatchError(err instanceof Error ? err.message : "patch review action에 실패했습니다.");
+    } finally {
+      setPatchActionLoading(null);
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -151,7 +205,12 @@ export default function ResearchReviewPage() {
                 {threads.map((thread) => (
                   <button
                     key={thread.thread_id}
-                    onClick={() => setSelectedThreadId(thread.thread_id)}
+                    onClick={() => {
+                      setSelectedThreadId(thread.thread_id);
+                      setPatchTextOverride(null);
+                      setPatchReviewResult(null);
+                      setPatchError(null);
+                    }}
                     className="w-full rounded-md border p-3 text-left transition-colors"
                     style={{
                       borderColor: selectedThreadId === thread.thread_id ? "var(--accent-light)" : "var(--border)",
@@ -281,6 +340,74 @@ export default function ResearchReviewPage() {
                   <section className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Recommended Patch Preview</h3>
                     <JsonPreview value={envelope.recommended_thread_patch} />
+                    <div className="mt-4 border-t border-[var(--border)] pt-4">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Patch Review Workflow</h3>
+                        {patchReviewResult && <StateBadge value={patchReviewResult.status} />}
+                      </div>
+                      <textarea
+                        value={patchText}
+                        onChange={(event) => {
+                          setPatchTextOverride(event.target.value);
+                          setPatchReviewResult(null);
+                          setPatchError(null);
+                        }}
+                        spellCheck={false}
+                        className="min-h-[260px] w-full resize-y rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-3 font-mono text-[11px] leading-relaxed text-[var(--text-secondary)] outline-none focus:border-[var(--accent-light)]"
+                      />
+                      {parsedPatch.error && (
+                        <div className="mt-2 rounded-md border border-[var(--warning)] bg-[var(--bg-elevated)] p-2 text-xs text-[var(--warning)]">
+                          {parsedPatch.error}
+                        </div>
+                      )}
+                      {patchError && (
+                        <div className="mt-2 rounded-md border border-[var(--error)] bg-[var(--bg-elevated)] p-2 text-xs text-[var(--error)]">
+                          {patchError}
+                        </div>
+                      )}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handlePatchAction("preview")}
+                          disabled={!parsedPatch.patch || patchActionLoading !== null}
+                          className="rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {patchActionLoading === "preview" ? "Previewing..." : "Preview Edited Patch"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePatchAction("apply")}
+                          disabled={!parsedPatch.patch || patchActionLoading !== null}
+                          className="rounded-md border border-[var(--accent-light)] bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {patchActionLoading === "apply" ? "Applying..." : "Apply Patch"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePatchAction("reject")}
+                          disabled={!parsedPatch.patch || patchActionLoading !== null}
+                          className="rounded-md border border-[var(--warning)] bg-transparent px-3 py-2 text-xs font-semibold text-[var(--warning)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {patchActionLoading === "reject" ? "Rejecting..." : "Reject Patch"}
+                        </button>
+                      </div>
+                      {patchReviewResult && (
+                        <div className="mt-3 grid gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-secondary)] xl:grid-cols-3">
+                          <div>
+                            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">patch hash</div>
+                            <div className="mt-1 break-all font-mono">{patchReviewResult.patch_hash}</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">patch result</div>
+                            <div className="mt-1">{patchReviewResult.patch_result.status}</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">review record</div>
+                            <div className="mt-1 break-all">{patchReviewResult.review_record_path || "preview only"}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </section>
                 </div>
               )}

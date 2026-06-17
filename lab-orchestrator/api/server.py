@@ -280,6 +280,56 @@ async def preview_subagent_output_envelope(body: dict = Body(...)):
     }
 
 
+def _patch_review_request(body: dict) -> tuple[dict, str, str, bool]:
+    patch = body.get("patch")
+    if not isinstance(patch, dict):
+        raise HTTPException(status_code=400, detail="patch object is required")
+    reviewer = str(body.get("reviewer", "local_reviewer")).strip() or "local_reviewer"
+    review_note = str(body.get("review_note", "")).strip()
+    confirm_artifact_write = body.get("confirm_artifact_write") is True
+    return patch, reviewer, review_note, confirm_artifact_write
+
+
+def _run_patch_review_action(thread_id: str, body: dict, *, action: str):
+    from orchestrator.research_patch_review import process_research_patch_review
+
+    thread_id = _validate_research_thread_id(thread_id)
+    patch, reviewer, review_note, confirm_artifact_write = _patch_review_request(body)
+    try:
+        return process_research_patch_review(
+            thread_id=thread_id,
+            patch=patch,
+            action=action,
+            reviewer=reviewer,
+            review_note=review_note,
+            confirm_artifact_write=confirm_artifact_write,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/research/threads/{thread_id}/patches/preview")
+async def preview_research_thread_patch_review(thread_id: str, body: dict = Body(...)):
+    """Preview a research_thread patch review without writing artifacts."""
+    return _run_patch_review_action(thread_id, body, action="preview")
+
+
+@app.post("/research/threads/{thread_id}/patches/apply")
+async def apply_research_thread_patch_review(thread_id: str, body: dict = Body(...)):
+    """Apply a research_thread patch to local artifacts after explicit confirmation."""
+    return _run_patch_review_action(thread_id, body, action="apply")
+
+
+@app.post("/research/threads/{thread_id}/patches/reject")
+async def reject_research_thread_patch_review(thread_id: str, body: dict = Body(...)):
+    """Record a rejected research_thread patch without changing the thread artifact."""
+    return _run_patch_review_action(thread_id, body, action="reject")
+
+
 @app.get("/workspaces")
 async def list_workspaces():
     """List available workspaces."""

@@ -245,6 +245,41 @@ export interface SubagentOutputEnvelope {
   live_store_mutations: unknown[];
 }
 
+export interface ResearchPatchReviewRecord {
+  schema_version: number;
+  review_id: string;
+  thread_id: string;
+  action: "preview" | "apply" | "reject";
+  patch_hash: string;
+  reviewer: string;
+  review_note: string;
+  result_status: string;
+  created_at: string;
+  artifact_mutations: { type: string; path: string }[];
+  live_store_mutations: unknown[];
+}
+
+export interface ResearchPatchReviewResponse {
+  schema_version: number;
+  status: string;
+  dry_run: boolean;
+  read_only: boolean;
+  artifact_write: boolean;
+  thread_id: string;
+  action: "preview" | "apply" | "reject";
+  patch_hash: string;
+  patch_result: {
+    status: string;
+    changes?: unknown;
+    preview_markdown?: string;
+    live_store_mutations?: unknown[];
+  };
+  review_record: ResearchPatchReviewRecord;
+  review_record_path: string | null;
+  artifact_mutations: { type: string; path: string }[];
+  live_store_mutations: unknown[];
+}
+
 export async function fetchResearchThreads(): Promise<{
   threads: ResearchThreadListItem[];
   count: number;
@@ -311,4 +346,58 @@ export async function previewEvidenceCriticEnvelope(packet: ResearchLoopPacket):
   });
   if (!res.ok) throw new Error("Failed to preview evidence critic envelope");
   return res.json();
+}
+
+async function researchPatchReviewRequest(
+  threadId: string,
+  action: "preview" | "apply" | "reject",
+  patch: Record<string, unknown>,
+  options: { reviewer?: string; review_note?: string; confirm_artifact_write?: boolean } = {},
+): Promise<ResearchPatchReviewResponse> {
+  const res = await fetch(`${API_BASE}/research/threads/${encodeURIComponent(threadId)}/patches/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      patch,
+      reviewer: options.reviewer || "ui_research_review",
+      review_note: options.review_note || "",
+      confirm_artifact_write: options.confirm_artifact_write === true,
+    }),
+  });
+  if (!res.ok) {
+    let detail = `Failed to ${action} research patch`;
+    try {
+      const payload = await res.json();
+      if (typeof payload.detail === "string") detail = payload.detail;
+    } catch { /* keep default */ }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+export async function previewResearchThreadPatch(
+  threadId: string,
+  patch: Record<string, unknown>,
+): Promise<ResearchPatchReviewResponse> {
+  return researchPatchReviewRequest(threadId, "preview", patch);
+}
+
+export async function applyResearchThreadPatch(
+  threadId: string,
+  patch: Record<string, unknown>,
+): Promise<ResearchPatchReviewResponse> {
+  return researchPatchReviewRequest(threadId, "apply", patch, {
+    confirm_artifact_write: true,
+    review_note: "UI에서 patch 적용을 승인했다.",
+  });
+}
+
+export async function rejectResearchThreadPatch(
+  threadId: string,
+  patch: Record<string, unknown>,
+): Promise<ResearchPatchReviewResponse> {
+  return researchPatchReviewRequest(threadId, "reject", patch, {
+    confirm_artifact_write: true,
+    review_note: "UI에서 patch 후보를 거절했다.",
+  });
 }

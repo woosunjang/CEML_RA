@@ -3,6 +3,11 @@
 **Status:** implementation guide before Phase 0 feature work.
 **Date:** 2026-06-15 KST
 
+**Implementation note:** Research Patch Review Workflow v1 now provides local
+artifact-only preview/apply/reject controls for `research_thread` patch
+candidates. Apply/reject requires explicit `confirm_artifact_write: true` and
+continues to keep `live_store_mutations: []`.
+
 ## Purpose
 
 이 문서는 CEML_RA의 다음 개발 방향을 repo-local truth로 저장한다. 기능 구현은

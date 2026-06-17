@@ -139,6 +139,124 @@ class ResearchThreadApiTests(unittest.TestCase):
         self.assertEqual(payload["envelope"]["schema_version"], 2)
         self.assertEqual(payload["envelope"]["critique_gate"]["status"], "requires_review")
 
+    def test_patch_review_preview_api_does_not_write(self):
+        client, artifacts = self._client_with_seeded_threads()
+        patch_payload = {
+            "schema_version": 2,
+            "thread_id": "rare_earth_magnets",
+            "research_state": "patch_review_candidate",
+            "append": {
+                "claims": [
+                    {
+                        "id": "claim.api.preview",
+                        "text": "API preview는 thread를 변경하지 않는다.",
+                        "status": "proposed",
+                    }
+                ]
+            },
+            "live_store_mutations": [],
+        }
+
+        response = client.post(
+            "/research/threads/rare_earth_magnets/patches/preview",
+            json={"patch": patch_payload, "reviewer": "tester"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        thread = research_thread.load_research_thread("rare_earth_magnets", artifacts_dir=artifacts)
+        self.assertTrue(payload["read_only"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["status"], "previewed")
+        self.assertEqual(payload["patch_result"]["status"], "would_update")
+        self.assertEqual(payload["review_record_path"], None)
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertFalse((artifacts / "research_patch_reviews").exists())
+        self.assertFalse(any(item["id"] == "claim.api.preview" for item in thread["claims"]))
+
+    def test_patch_review_apply_api_requires_confirmation_and_writes_artifacts(self):
+        client, artifacts = self._client_with_seeded_threads()
+        patch_payload = {
+            "schema_version": 2,
+            "thread_id": "rare_earth_magnets",
+            "append": {
+                "claims": [
+                    {
+                        "id": "claim.api.apply",
+                        "text": "명시 승인된 patch만 thread에 적용한다.",
+                        "status": "proposed",
+                    }
+                ]
+            },
+            "live_store_mutations": [],
+        }
+
+        blocked = client.post(
+            "/research/threads/rare_earth_magnets/patches/apply",
+            json={"patch": patch_payload},
+        )
+        response = client.post(
+            "/research/threads/rare_earth_magnets/patches/apply",
+            json={"patch": patch_payload, "reviewer": "tester", "confirm_artifact_write": True},
+        )
+
+        self.assertEqual(blocked.status_code, 400)
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        thread = research_thread.load_research_thread("rare_earth_magnets", artifacts_dir=artifacts)
+        self.assertFalse(payload["read_only"])
+        self.assertEqual(payload["status"], "applied")
+        self.assertEqual(payload["patch_result"]["status"], "updated")
+        self.assertTrue(Path(payload["review_record_path"]).exists())
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertTrue(any(item["id"] == "claim.api.apply" for item in thread["claims"]))
+
+    def test_patch_review_reject_api_writes_review_record_only(self):
+        client, artifacts = self._client_with_seeded_threads()
+        patch_payload = {
+            "schema_version": 2,
+            "thread_id": "rare_earth_magnets",
+            "append": {
+                "claims": [
+                    {
+                        "id": "claim.api.reject",
+                        "text": "거절된 patch는 review record로만 남는다.",
+                        "status": "proposed",
+                    }
+                ]
+            },
+            "live_store_mutations": [],
+        }
+
+        response = client.post(
+            "/research/threads/rare_earth_magnets/patches/reject",
+            json={
+                "patch": patch_payload,
+                "reviewer": "tester",
+                "review_note": "근거 부족",
+                "confirm_artifact_write": True,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        thread = research_thread.load_research_thread("rare_earth_magnets", artifacts_dir=artifacts)
+        self.assertFalse(payload["read_only"])
+        self.assertEqual(payload["status"], "rejected")
+        self.assertEqual(payload["review_record"]["result_status"], "rejected")
+        self.assertEqual([item["type"] for item in payload["artifact_mutations"]], ["patch_review_record"])
+        self.assertFalse(any(item["id"] == "claim.api.reject" for item in thread["claims"]))
+
+    def test_patch_review_api_rejects_invalid_patch(self):
+        client, _ = self._client_with_seeded_threads()
+
+        response = client.post(
+            "/research/threads/rare_earth_magnets/patches/preview",
+            json={"patch": {"schema_version": 2, "thread_id": "other_thread"}},
+        )
+
+        self.assertEqual(response.status_code, 422)
+
     def test_missing_and_invalid_thread_ids(self):
         client, _ = self._client_with_seeded_threads()
 

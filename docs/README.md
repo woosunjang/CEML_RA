@@ -45,6 +45,18 @@ Read-only review surfaces:
 - `POST /research/subagent-envelopes/preview`
 - `lab-orchestrator/ui/src/app/research/page.tsx`
 
+Patch review workflow:
+
+- `POST /research/threads/{thread_id}/patches/preview` previews an edited patch
+  without writing artifacts.
+- `POST /research/threads/{thread_id}/patches/apply` applies a patch only when
+  `confirm_artifact_write: true` is present, then writes a patch review record.
+- `POST /research/threads/{thread_id}/patches/reject` records a rejected patch
+  only when `confirm_artifact_write: true` is present, without changing the
+  research thread.
+- These endpoints write only local durable artifacts and keep
+  `live_store_mutations: []`.
+
 ## Storage Boundary
 
 - Source code belongs in git and GitHub.
