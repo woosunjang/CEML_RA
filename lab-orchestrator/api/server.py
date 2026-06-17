@@ -219,6 +219,55 @@ async def get_research_thread_context_bundle(
     return payload
 
 
+def _evidence_matrix_request(body: dict) -> tuple[str, str, int, bool]:
+    trigger_type = str(body.get("trigger_type", "on_demand"))
+    trigger_summary = str(body.get("trigger_summary", "UI evidence matrix review")).strip()
+    if not trigger_summary:
+        raise HTTPException(status_code=400, detail="trigger_summary is required")
+    raw_max_rows = body.get("max_rows", 12)
+    try:
+        max_rows = int(raw_max_rows)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="max_rows must be an integer") from None
+    if max_rows < 1 or max_rows > 50:
+        raise HTTPException(status_code=400, detail="max_rows must be between 1 and 50")
+    confirm_artifact_write = body.get("confirm_artifact_write") is True
+    return trigger_type, trigger_summary, max_rows, confirm_artifact_write
+
+
+def _run_evidence_matrix_action(thread_id: str, body: dict, *, execute: bool):
+    from orchestrator.research_evidence_matrix import preview_or_write_evidence_matrix
+
+    thread_id = _validate_research_thread_id(thread_id)
+    trigger_type, trigger_summary, max_rows, confirm_artifact_write = _evidence_matrix_request(body)
+    if execute and not confirm_artifact_write:
+        raise HTTPException(status_code=400, detail="confirm_artifact_write=true is required for evidence matrix writes")
+    try:
+        return preview_or_write_evidence_matrix(
+            thread_id=thread_id,
+            trigger_type=trigger_type,
+            trigger_summary=trigger_summary,
+            execute=execute,
+            max_rows=max_rows,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/research/threads/{thread_id}/evidence-matrix/preview")
+async def preview_research_thread_evidence_matrix(thread_id: str, body: dict = Body(default={})):
+    """Build a read-only Evidence Matrix review surface preview for one thread."""
+    return _run_evidence_matrix_action(thread_id, body, execute=False)
+
+
+@app.post("/research/threads/{thread_id}/evidence-matrix/write")
+async def write_research_thread_evidence_matrix(thread_id: str, body: dict = Body(...)):
+    """Write an Evidence Matrix local artifact after explicit confirmation."""
+    return _run_evidence_matrix_action(thread_id, body, execute=True)
+
+
 @app.post("/research/loops/preview")
 async def preview_research_loop_packet(body: dict = Body(...)):
     """Build a read-only Research Loop Packet preview without writing artifacts."""

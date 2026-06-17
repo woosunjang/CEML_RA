@@ -245,6 +245,38 @@ export interface SubagentOutputEnvelope {
   live_store_mutations: unknown[];
 }
 
+export interface EvidenceMatrixRow {
+  row_id: string;
+  focus: ResearchObjectPreview;
+  maturity_lane: { lane: string; source: string; note: string };
+  current_evidence: ResearchObjectPreview[];
+  counterarguments: ResearchObjectPreview[];
+  missing_evidence: { id: string; status: string; text: string }[];
+  review_questions: string[];
+  recommended_review_action: { action: string; status: string; text: string };
+  live_store_mutations: unknown[];
+}
+
+export interface ResearchEvidenceMatrix {
+  matrix_id: string;
+  thread_id: string;
+  topic: string;
+  trigger: { type: string; summary: string };
+  review_surface_boundary: { kind: string; text: string };
+  rows: EvidenceMatrixRow[];
+  coverage: {
+    row_count: number;
+    rows_with_evidence: number;
+    rows_with_counterarguments: number;
+    rows_with_missing_evidence: number;
+    maturity_lane_counts: Record<string, number>;
+    critique_gate: string;
+    live_store_mutations: unknown[];
+  };
+  recommended_thread_patch: Record<string, unknown>;
+  live_store_mutations: unknown[];
+}
+
 export interface ResearchPatchReviewRecord {
   schema_version: number;
   review_id: string;
@@ -345,6 +377,25 @@ export async function previewEvidenceCriticEnvelope(packet: ResearchLoopPacket):
     }),
   });
   if (!res.ok) throw new Error("Failed to preview evidence critic envelope");
+  return res.json();
+}
+
+export async function previewResearchEvidenceMatrix(threadId: string): Promise<{
+  matrix: ResearchEvidenceMatrix;
+  recommended_thread_patch: Record<string, unknown>;
+  read_only: boolean;
+  dry_run: boolean;
+  live_store_mutations: unknown[];
+}> {
+  const res = await fetch(`${API_BASE}/research/threads/${encodeURIComponent(threadId)}/evidence-matrix/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      trigger_type: "on_demand",
+      trigger_summary: "UI evidence matrix review",
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to preview evidence matrix");
   return res.json();
 }
 

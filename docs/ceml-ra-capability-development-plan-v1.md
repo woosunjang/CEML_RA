@@ -8,6 +8,13 @@ artifact-only preview/apply/reject controls for `research_thread` patch
 candidates. Apply/reject requires explicit `confirm_artifact_write: true` and
 continues to keep `live_store_mutations: []`.
 
+**Implementation note:** Evidence Matrix Review Surface v1 now builds a
+Korean-first Markdown/JSON matrix from `ResearchContextBundle` and
+`research_thread` objects, placing evidence, counterarguments, missing evidence,
+maturity lanes, and a recommended thread patch preview in one review flow. It is
+a structured review surface, not an autonomous judgment engine, and continues to
+keep `live_store_mutations: []`.
+
 ## Purpose
 
 이 문서는 CEML_RA의 다음 개발 방향을 repo-local truth로 저장한다. 기능 구현은

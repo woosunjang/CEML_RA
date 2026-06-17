@@ -88,6 +88,52 @@ class ResearchThreadApiTests(unittest.TestCase):
         self.assertEqual(payload["bundle"]["trigger"]["type"], "on_demand")
         self.assertEqual(payload["bundle"]["activation_previews"]["kg_ingest_preview"]["status"], "preview_only")
 
+    def test_preview_evidence_matrix_api_is_read_only(self):
+        client, artifacts = self._client_with_seeded_threads()
+
+        response = client.post(
+            "/research/threads/rare_earth_magnets/evidence-matrix/preview",
+            json={"trigger_type": "on_demand", "trigger_summary": "matrix review"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["read_only"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["status"], "would_write")
+        self.assertEqual(payload["matrix"]["coverage"]["row_count"], 3)
+        self.assertEqual(payload["recommended_thread_patch"]["schema_version"], 2)
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertFalse((artifacts / "evidence_matrices").exists())
+
+    def test_write_evidence_matrix_api_requires_confirmation(self):
+        client, artifacts = self._client_with_seeded_threads()
+
+        blocked = client.post(
+            "/research/threads/rare_earth_magnets/evidence-matrix/write",
+            json={"trigger_type": "on_demand", "trigger_summary": "matrix review"},
+        )
+        response = client.post(
+            "/research/threads/rare_earth_magnets/evidence-matrix/write",
+            json={
+                "trigger_type": "on_demand",
+                "trigger_summary": "matrix review",
+                "confirm_artifact_write": True,
+            },
+        )
+
+        self.assertEqual(blocked.status_code, 400)
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertFalse(payload["read_only"])
+        self.assertFalse(payload["dry_run"])
+        self.assertEqual(payload["status"], "written")
+        self.assertTrue(Path(payload["json_path"]).exists())
+        self.assertTrue(Path(payload["markdown_path"]).exists())
+        self.assertTrue(Path(payload["patch_preview_path"]).exists())
+        self.assertTrue((artifacts / "evidence_matrices").exists())
+        self.assertEqual(payload["live_store_mutations"], [])
+
     def test_preview_research_loop_packet_api(self):
         client, _ = self._client_with_seeded_threads()
 

@@ -8,9 +8,12 @@ import {
   fetchResearchContextBundle,
   fetchResearchThreads,
   previewEvidenceCriticEnvelope,
+  previewResearchEvidenceMatrix,
   previewResearchThreadPatch,
   previewResearchLoop,
   rejectResearchThreadPatch,
+  EvidenceMatrixRow,
+  ResearchEvidenceMatrix,
   ResearchContextBundle,
   ResearchLoopPacket,
   ResearchObjectPreview,
@@ -53,6 +56,36 @@ function ObjectRow({ item }: { item: ResearchObjectPreview }) {
   );
 }
 
+function MatrixRow({ row }: { row: EvidenceMatrixRow }) {
+  return (
+    <div className="rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+      <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+        <span className="truncate text-xs font-semibold text-[var(--text-primary)]">{row.focus.object_ref}</span>
+        <StateBadge value={row.maturity_lane.lane} />
+        <StateBadge value={row.recommended_review_action.status} />
+      </div>
+      <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{row.focus.text}</p>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[var(--text-secondary)]">
+        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-2">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">evidence</div>
+          <div className="mt-1 font-semibold text-[var(--text-primary)]">{row.current_evidence.length}</div>
+        </div>
+        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-2">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">counter</div>
+          <div className="mt-1 font-semibold text-[var(--text-primary)]">{row.counterarguments.length}</div>
+        </div>
+        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-2">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">missing</div>
+          <div className="mt-1 font-semibold text-[var(--text-primary)]">{row.missing_evidence.length}</div>
+        </div>
+      </div>
+      <div className="mt-2 text-[11px] leading-relaxed text-[var(--text-muted)]">
+        {row.recommended_review_action.text}
+      </div>
+    </div>
+  );
+}
+
 function JsonPreview({ value }: { value: unknown }) {
   return (
     <pre className="max-h-[280px] overflow-auto rounded-md border border-[var(--border)] bg-[var(--bg-primary)] p-3 text-[11px] leading-relaxed text-[var(--text-secondary)]">
@@ -68,6 +101,7 @@ export default function ResearchReviewPage() {
   const [contextBundle, setContextBundle] = useState<ResearchContextBundle | null>(null);
   const [loopPacket, setLoopPacket] = useState<ResearchLoopPacket | null>(null);
   const [envelope, setEnvelope] = useState<SubagentOutputEnvelope | null>(null);
+  const [evidenceMatrix, setEvidenceMatrix] = useState<ResearchEvidenceMatrix | null>(null);
   const [patchTextOverride, setPatchTextOverride] = useState<string | null>(null);
   const [patchActionLoading, setPatchActionLoading] = useState<"preview" | "apply" | "reject" | null>(null);
   const [patchError, setPatchError] = useState<string | null>(null);
@@ -83,15 +117,20 @@ export default function ResearchReviewPage() {
         fetchResearchContextBundle(threadId),
         previewResearchLoop(threadId),
       ]);
-      const envelopePayload = await previewEvidenceCriticEnvelope(loopPayload.packet);
+      const [envelopePayload, matrixPayload] = await Promise.all([
+        previewEvidenceCriticEnvelope(loopPayload.packet),
+        previewResearchEvidenceMatrix(threadId),
+      ]);
       setContextBundle(contextPayload.bundle);
       setLoopPacket(loopPayload.packet);
       setEnvelope(envelopePayload.envelope);
+      setEvidenceMatrix(matrixPayload.matrix);
     } catch (err) {
       setError(err instanceof Error ? err.message : "연구 리뷰 preview를 만들지 못했습니다.");
       setContextBundle(null);
       setLoopPacket(null);
       setEnvelope(null);
+      setEvidenceMatrix(null);
     } finally {
       setLoading(false);
     }
@@ -132,9 +171,10 @@ export default function ResearchReviewPage() {
     [threads, selectedThreadId],
   );
 
+  const recommendedThreadPatch = evidenceMatrix?.recommended_thread_patch ?? envelope?.recommended_thread_patch;
   const recommendedPatchText = useMemo(
-    () => (envelope ? JSON.stringify(envelope.recommended_thread_patch, null, 2) : ""),
-    [envelope],
+    () => (recommendedThreadPatch ? JSON.stringify(recommendedThreadPatch, null, 2) : ""),
+    [recommendedThreadPatch],
   );
   const patchText = patchTextOverride ?? recommendedPatchText;
 
@@ -239,7 +279,7 @@ export default function ResearchReviewPage() {
                 </div>
               )}
 
-              {!loading && !error && selectedThread && contextBundle && loopPacket && envelope && (
+              {!loading && !error && selectedThread && contextBundle && loopPacket && envelope && evidenceMatrix && (
                 <div className="space-y-5">
                   <section className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -251,7 +291,31 @@ export default function ResearchReviewPage() {
                         <StateBadge value={selectedThread.research_state} />
                         <StateBadge value={`objects ${contextBundle.relevant_objects.length}`} />
                         <StateBadge value={`gaps ${contextBundle.evidence_gaps.length}`} />
+                        <StateBadge value={`matrix ${evidenceMatrix.coverage.row_count}`} />
                       </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">Evidence Matrix</h3>
+                      <div className="flex flex-wrap gap-2">
+                        <StateBadge value={evidenceMatrix.coverage.critique_gate} />
+                        <StateBadge value={`evidence ${evidenceMatrix.coverage.rows_with_evidence}`} />
+                        <StateBadge value={`counter ${evidenceMatrix.coverage.rows_with_counterarguments}`} />
+                        <StateBadge value={`missing ${evidenceMatrix.coverage.rows_with_missing_evidence}`} />
+                      </div>
+                    </div>
+                    <div className="grid gap-2 xl:grid-cols-2">
+                      {evidenceMatrix.rows.length === 0 ? (
+                        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-muted)]">
+                          matrix row 없음
+                        </div>
+                      ) : (
+                        evidenceMatrix.rows.slice(0, 8).map((row) => (
+                          <MatrixRow key={row.row_id} row={row} />
+                        ))
+                      )}
                     </div>
                   </section>
 
@@ -338,8 +402,8 @@ export default function ResearchReviewPage() {
                   </section>
 
                   <section className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Recommended Patch Preview</h3>
-                    <JsonPreview value={envelope.recommended_thread_patch} />
+                    <h3 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Evidence Matrix Patch Preview</h3>
+                    <JsonPreview value={recommendedThreadPatch} />
                     <div className="mt-4 border-t border-[var(--border)] pt-4">
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Patch Review Workflow</h3>

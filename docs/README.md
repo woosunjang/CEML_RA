@@ -41,9 +41,23 @@ Current dry-run entrypoints:
 Read-only review surfaces:
 
 - `GET /research/threads/{thread_id}/context`
+- `POST /research/threads/{thread_id}/evidence-matrix/preview`
 - `POST /research/loops/preview`
 - `POST /research/subagent-envelopes/preview`
 - `lab-orchestrator/ui/src/app/research/page.tsx`
+
+Evidence Matrix review surface:
+
+- `POST /research/threads/{thread_id}/evidence-matrix/preview` builds a
+  structured review matrix that places focus objects beside linked evidence,
+  counterarguments, missing evidence, maturity lanes, and a recommended thread
+  patch preview. It is read-only and keeps `live_store_mutations: []`.
+- `POST /research/threads/{thread_id}/evidence-matrix/write` writes the matrix
+  Markdown/JSON and patch-preview JSON only when `confirm_artifact_write: true`
+  is present. It does not apply the patch or mutate KG/RAG/Slack/runtime state.
+- Evidence Matrix v1 is a review surface, not an autonomous judgment engine:
+  unresolved evidence gaps and counterarguments must flow into the patch review
+  workflow before anything is remembered as accepted.
 
 Patch review workflow:
 
