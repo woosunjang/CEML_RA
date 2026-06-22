@@ -303,6 +303,70 @@ class ResearchThreadApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422)
 
+    def test_knowledge_accumulation_preview_api_is_read_only(self):
+        client, artifacts = self._client_with_seeded_threads()
+
+        response = client.post(
+            "/research/threads/rare_earth_magnets/knowledge/preview",
+            json={"purpose": "api knowledge accumulation"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertTrue(payload["dry_run"])
+        self.assertTrue(payload["read_only"])
+        self.assertEqual(payload["status"], "would_write")
+        self.assertGreater(payload["record_set"]["coverage"]["record_count"], 0)
+        self.assertGreater(payload["record_set"]["coverage"]["ready_for_archival_queue"], 0)
+        self.assertEqual(payload["live_store_mutations"], [])
+        self.assertFalse((artifacts / "research_knowledge_records").exists())
+
+    def test_knowledge_accumulation_write_and_enqueue_require_confirmation(self):
+        client, artifacts = self._client_with_seeded_threads()
+        queue_dir = artifacts / "archival_queue"
+
+        blocked_write = client.post(
+            "/research/threads/rare_earth_magnets/knowledge/write",
+            json={"purpose": "api knowledge accumulation"},
+        )
+        write_response = client.post(
+            "/research/threads/rare_earth_magnets/knowledge/write",
+            json={
+                "purpose": "api knowledge accumulation",
+                "confirm_artifact_write": True,
+            },
+        )
+
+        with patch("orchestrator.research_knowledge_accumulation.ARCHIVAL_QUEUE_DIR", queue_dir):
+            blocked_enqueue = client.post(
+                "/research/threads/rare_earth_magnets/knowledge/enqueue-archival",
+                json={
+                    "purpose": "api knowledge accumulation",
+                    "confirm_artifact_write": True,
+                },
+            )
+            enqueue_response = client.post(
+                "/research/threads/rare_earth_magnets/knowledge/enqueue-archival",
+                json={
+                    "purpose": "api knowledge accumulation",
+                    "confirm_artifact_write": True,
+                    "confirm_archival_enqueue": True,
+                },
+            )
+
+        self.assertEqual(blocked_write.status_code, 400)
+        self.assertEqual(write_response.status_code, 200)
+        self.assertEqual(blocked_enqueue.status_code, 400)
+        self.assertEqual(enqueue_response.status_code, 200)
+        write_payload = write_response.json()
+        enqueue_payload = enqueue_response.json()
+        self.assertEqual(write_payload["status"], "written")
+        self.assertTrue(Path(write_payload["json_path"]).exists())
+        self.assertEqual(enqueue_payload["status"], "archival_queued")
+        self.assertTrue(enqueue_payload["archival_queue_mutations"])
+        self.assertTrue(queue_dir.exists())
+        self.assertEqual(enqueue_payload["live_store_mutations"], [])
+
     def test_missing_and_invalid_thread_ids(self):
         client, _ = self._client_with_seeded_threads()
 

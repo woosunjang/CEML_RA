@@ -379,6 +379,66 @@ async def reject_research_thread_patch_review(thread_id: str, body: dict = Body(
     return _run_patch_review_action(thread_id, body, action="reject")
 
 
+def _knowledge_accumulation_request(body: Optional[dict]) -> tuple[str, bool, int, bool, bool]:
+    body = body or {}
+    purpose = str(body.get("purpose", "research thread knowledge accumulation")).strip()
+    if not purpose:
+        raise HTTPException(status_code=400, detail="purpose is required")
+    include_pending_review = body.get("include_pending_review") is True
+    raw_max_records = body.get("max_records", 50)
+    try:
+        max_records = int(raw_max_records)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="max_records must be an integer") from None
+    if max_records < 1 or max_records > 200:
+        raise HTTPException(status_code=400, detail="max_records must be between 1 and 200")
+    confirm_artifact_write = body.get("confirm_artifact_write") is True
+    confirm_archival_enqueue = body.get("confirm_archival_enqueue") is True
+    return purpose, include_pending_review, max_records, confirm_artifact_write, confirm_archival_enqueue
+
+
+def _run_knowledge_accumulation_action(thread_id: str, body: Optional[dict], *, execute: bool, enqueue_archival: bool):
+    from orchestrator.research_knowledge_accumulation import preview_or_write_knowledge_records
+
+    thread_id = _validate_research_thread_id(thread_id)
+    purpose, include_pending_review, max_records, confirm_artifact_write, confirm_archival_enqueue = _knowledge_accumulation_request(body)
+    if execute and not confirm_artifact_write:
+        raise HTTPException(status_code=400, detail="confirm_artifact_write=true is required for knowledge record writes")
+    if enqueue_archival and not confirm_archival_enqueue:
+        raise HTTPException(status_code=400, detail="confirm_archival_enqueue=true is required for archival queue writes")
+    try:
+        return preview_or_write_knowledge_records(
+            thread_id=thread_id,
+            purpose=purpose,
+            execute=execute,
+            enqueue_archival=enqueue_archival,
+            include_pending_review=include_pending_review,
+            max_records=max_records,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/research/threads/{thread_id}/knowledge/preview")
+async def preview_research_thread_knowledge_records(thread_id: str, body: Optional[dict] = Body(default=None)):
+    """Preview portable knowledge records from reviewed research_thread objects."""
+    return _run_knowledge_accumulation_action(thread_id, body, execute=False, enqueue_archival=False)
+
+
+@app.post("/research/threads/{thread_id}/knowledge/write")
+async def write_research_thread_knowledge_records(thread_id: str, body: dict = Body(...)):
+    """Write portable knowledge records as local durable artifacts."""
+    return _run_knowledge_accumulation_action(thread_id, body, execute=True, enqueue_archival=False)
+
+
+@app.post("/research/threads/{thread_id}/knowledge/enqueue-archival")
+async def enqueue_research_thread_knowledge_records(thread_id: str, body: dict = Body(...)):
+    """Write knowledge records and enqueue reviewed records for the archival worker."""
+    return _run_knowledge_accumulation_action(thread_id, body, execute=True, enqueue_archival=True)
+
+
 @app.get("/workspaces")
 async def list_workspaces():
     """List available workspaces."""

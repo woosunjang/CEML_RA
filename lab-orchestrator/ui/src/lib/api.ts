@@ -277,6 +277,46 @@ export interface ResearchEvidenceMatrix {
   live_store_mutations: unknown[];
 }
 
+export interface ResearchKnowledgeRecordSet {
+  record_set_id: string;
+  thread_id: string;
+  topic: string;
+  purpose: string;
+  records: {
+    record_id: string;
+    section: string;
+    object_ref: string;
+    text: string;
+    status: string;
+    review_state: string;
+    support_state: string;
+    accumulation_state: string;
+  }[];
+  archival_queue_preview: unknown[];
+  coverage: {
+    record_count: number;
+    ready_for_archival_queue: number;
+    needs_review: number;
+    live_store_mutations: unknown[];
+  };
+  live_store_mutations: unknown[];
+}
+
+export interface ResearchKnowledgeAccumulationResponse {
+  schema_version: number;
+  status: string;
+  dry_run: boolean;
+  read_only: boolean;
+  artifact_write: boolean;
+  archival_enqueue: boolean;
+  thread_id: string;
+  record_set_id: string;
+  record_set: ResearchKnowledgeRecordSet;
+  artifact_mutations: { type: string; path: string }[];
+  archival_queue_mutations: { type: string; path: string; status: string }[];
+  live_store_mutations: unknown[];
+}
+
 export interface ResearchPatchReviewRecord {
   schema_version: number;
   review_id: string;
@@ -396,6 +436,39 @@ export async function previewResearchEvidenceMatrix(threadId: string): Promise<{
     }),
   });
   if (!res.ok) throw new Error("Failed to preview evidence matrix");
+  return res.json();
+}
+
+export async function previewResearchKnowledgeRecords(threadId: string): Promise<ResearchKnowledgeAccumulationResponse> {
+  const res = await fetch(`${API_BASE}/research/threads/${encodeURIComponent(threadId)}/knowledge/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      purpose: "UI research knowledge accumulation",
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to preview research knowledge records");
+  return res.json();
+}
+
+export async function enqueueResearchKnowledgeRecords(threadId: string): Promise<ResearchKnowledgeAccumulationResponse> {
+  const res = await fetch(`${API_BASE}/research/threads/${encodeURIComponent(threadId)}/knowledge/enqueue-archival`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      purpose: "UI research knowledge accumulation",
+      confirm_artifact_write: true,
+      confirm_archival_enqueue: true,
+    }),
+  });
+  if (!res.ok) {
+    let detail = "Failed to enqueue research knowledge records";
+    try {
+      const payload = await res.json();
+      if (typeof payload.detail === "string") detail = payload.detail;
+    } catch { /* keep default */ }
+    throw new Error(detail);
+  }
   return res.json();
 }
 

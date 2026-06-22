@@ -15,6 +15,12 @@ maturity lanes, and a recommended thread patch preview in one review flow. It is
 a structured review surface, not an autonomous judgment engine, and continues to
 keep `live_store_mutations: []`.
 
+**Implementation note:** Research Knowledge Accumulation v1 now converts
+reviewed/accepted `research_thread` objects into portable knowledge records and
+optional archival worker queue jobs. This creates an actual accumulation path
+from thread memory toward Graphiti without directly mutating live KG/RAG/Slack
+stores.
+
 ## Purpose
 
 이 문서는 CEML_RA의 다음 개발 방향을 repo-local truth로 저장한다. 기능 구현은

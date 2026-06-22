@@ -5,16 +5,20 @@ import Sidebar from "@/components/Sidebar";
 import {
   applyResearchThreadPatch,
   checkHealth,
+  enqueueResearchKnowledgeRecords,
   fetchResearchContextBundle,
   fetchResearchThreads,
   previewEvidenceCriticEnvelope,
   previewResearchEvidenceMatrix,
+  previewResearchKnowledgeRecords,
   previewResearchThreadPatch,
   previewResearchLoop,
   rejectResearchThreadPatch,
   EvidenceMatrixRow,
   ResearchEvidenceMatrix,
   ResearchContextBundle,
+  ResearchKnowledgeAccumulationResponse,
+  ResearchKnowledgeRecordSet,
   ResearchLoopPacket,
   ResearchObjectPreview,
   ResearchPatchReviewResponse,
@@ -102,6 +106,10 @@ export default function ResearchReviewPage() {
   const [loopPacket, setLoopPacket] = useState<ResearchLoopPacket | null>(null);
   const [envelope, setEnvelope] = useState<SubagentOutputEnvelope | null>(null);
   const [evidenceMatrix, setEvidenceMatrix] = useState<ResearchEvidenceMatrix | null>(null);
+  const [knowledgeRecordSet, setKnowledgeRecordSet] = useState<ResearchKnowledgeRecordSet | null>(null);
+  const [knowledgeActionLoading, setKnowledgeActionLoading] = useState(false);
+  const [knowledgeResult, setKnowledgeResult] = useState<ResearchKnowledgeAccumulationResponse | null>(null);
+  const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
   const [patchTextOverride, setPatchTextOverride] = useState<string | null>(null);
   const [patchActionLoading, setPatchActionLoading] = useState<"preview" | "apply" | "reject" | null>(null);
   const [patchError, setPatchError] = useState<string | null>(null);
@@ -117,20 +125,25 @@ export default function ResearchReviewPage() {
         fetchResearchContextBundle(threadId),
         previewResearchLoop(threadId),
       ]);
-      const [envelopePayload, matrixPayload] = await Promise.all([
+      const [envelopePayload, matrixPayload, knowledgePayload] = await Promise.all([
         previewEvidenceCriticEnvelope(loopPayload.packet),
         previewResearchEvidenceMatrix(threadId),
+        previewResearchKnowledgeRecords(threadId),
       ]);
       setContextBundle(contextPayload.bundle);
       setLoopPacket(loopPayload.packet);
       setEnvelope(envelopePayload.envelope);
       setEvidenceMatrix(matrixPayload.matrix);
+      setKnowledgeRecordSet(knowledgePayload.record_set);
+      setKnowledgeResult(null);
+      setKnowledgeError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "연구 리뷰 preview를 만들지 못했습니다.");
       setContextBundle(null);
       setLoopPacket(null);
       setEnvelope(null);
       setEvidenceMatrix(null);
+      setKnowledgeRecordSet(null);
     } finally {
       setLoading(false);
     }
@@ -215,6 +228,21 @@ export default function ResearchReviewPage() {
     }
   };
 
+  const handleKnowledgeEnqueue = async () => {
+    if (!selectedThreadId) return;
+    setKnowledgeActionLoading(true);
+    setKnowledgeError(null);
+    try {
+      const result = await enqueueResearchKnowledgeRecords(selectedThreadId);
+      setKnowledgeResult(result);
+      setKnowledgeRecordSet(result.record_set);
+    } catch (err) {
+      setKnowledgeError(err instanceof Error ? err.message : "knowledge record enqueue에 실패했습니다.");
+    } finally {
+      setKnowledgeActionLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen">
       <Sidebar serverOnline={online} />
@@ -250,6 +278,8 @@ export default function ResearchReviewPage() {
                       setPatchTextOverride(null);
                       setPatchReviewResult(null);
                       setPatchError(null);
+                      setKnowledgeResult(null);
+                      setKnowledgeError(null);
                     }}
                     className="w-full rounded-md border p-3 text-left transition-colors"
                     style={{
@@ -279,7 +309,7 @@ export default function ResearchReviewPage() {
                 </div>
               )}
 
-              {!loading && !error && selectedThread && contextBundle && loopPacket && envelope && evidenceMatrix && (
+              {!loading && !error && selectedThread && contextBundle && loopPacket && envelope && evidenceMatrix && knowledgeRecordSet && (
                 <div className="space-y-5">
                   <section className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -292,6 +322,7 @@ export default function ResearchReviewPage() {
                         <StateBadge value={`objects ${contextBundle.relevant_objects.length}`} />
                         <StateBadge value={`gaps ${contextBundle.evidence_gaps.length}`} />
                         <StateBadge value={`matrix ${evidenceMatrix.coverage.row_count}`} />
+                        <StateBadge value={`knowledge ${knowledgeRecordSet.coverage.record_count}`} />
                       </div>
                     </div>
                   </section>
@@ -316,6 +347,61 @@ export default function ResearchReviewPage() {
                           <MatrixRow key={row.row_id} row={row} />
                         ))
                       )}
+                    </div>
+                  </section>
+
+                  <section className="rounded-md border border-[var(--border)] bg-[var(--bg-secondary)] p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold text-[var(--text-primary)]">Knowledge Accumulation</h3>
+                      <div className="flex flex-wrap gap-2">
+                        <StateBadge value={`records ${knowledgeRecordSet.coverage.record_count}`} />
+                        <StateBadge value={`archival ${knowledgeRecordSet.coverage.ready_for_archival_queue}`} />
+                        <StateBadge value={`needs review ${knowledgeRecordSet.coverage.needs_review}`} />
+                        {knowledgeResult && <StateBadge value={knowledgeResult.status} />}
+                      </div>
+                    </div>
+                    <div className="grid gap-2 xl:grid-cols-2">
+                      {knowledgeRecordSet.records.length === 0 ? (
+                        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-muted)]">
+                          knowledge record 없음
+                        </div>
+                      ) : (
+                        knowledgeRecordSet.records.slice(0, 6).map((record) => (
+                          <div key={record.record_id} className="rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+                            <div className="mb-2 flex min-w-0 flex-wrap items-center gap-2">
+                              <span className="truncate text-xs font-semibold text-[var(--text-primary)]">{record.object_ref}</span>
+                              <StateBadge value={record.section} />
+                              <StateBadge value={record.accumulation_state} />
+                            </div>
+                            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">{record.text}</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              <StateBadge value={record.status || "status_missing"} />
+                              <StateBadge value={record.review_state || "review_missing"} />
+                              <StateBadge value={record.support_state || "support_missing"} />
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    {knowledgeError && (
+                      <div className="mt-3 rounded-md border border-[var(--error)] bg-[var(--bg-elevated)] p-2 text-xs text-[var(--error)]">
+                        {knowledgeError}
+                      </div>
+                    )}
+                    {knowledgeResult && (
+                      <div className="mt-3 rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] p-3 text-xs text-[var(--text-secondary)]">
+                        archival queue jobs: {knowledgeResult.archival_queue_mutations.length}
+                      </div>
+                    )}
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={handleKnowledgeEnqueue}
+                        disabled={knowledgeActionLoading || knowledgeRecordSet.coverage.ready_for_archival_queue === 0}
+                        className="rounded-md border border-[var(--accent-light)] bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {knowledgeActionLoading ? "Enqueuing..." : "Enqueue Archival Records"}
+                      </button>
                     </div>
                   </section>
 

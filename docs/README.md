@@ -59,6 +59,19 @@ Evidence Matrix review surface:
   unresolved evidence gaps and counterarguments must flow into the patch review
   workflow before anything is remembered as accepted.
 
+Knowledge accumulation:
+
+- `POST /research/threads/{thread_id}/knowledge/preview` builds portable
+  knowledge records from reviewed/accepted `research_thread` objects without
+  writing artifacts.
+- `POST /research/threads/{thread_id}/knowledge/write` writes the knowledge
+  record Markdown/JSON and archival queue preview only when
+  `confirm_artifact_write: true` is present.
+- `POST /research/threads/{thread_id}/knowledge/enqueue-archival` also writes
+  archival worker queue jobs, but only when both `confirm_artifact_write: true`
+  and `confirm_archival_enqueue: true` are present. It queues local jobs; it
+  does not call Graphiti or mutate live KG/RAG/Slack/runtime state directly.
+
 Patch review workflow:
 
 - `POST /research/threads/{thread_id}/patches/preview` previews an edited patch
