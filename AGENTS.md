@@ -26,8 +26,9 @@ agent surface unless the user explicitly asks for one.
 - Recent proposal and work-package planning artifacts are available tools and
   historical context, not an implied roadmap. Do not infer the next product step
   from them unless the user explicitly selects that direction.
-- Research Loop Packet v1 is the current dry-run-first code boundary for
-  planning one loop without mutating research_thread or live stores.
+- Research Loop Packet v1 and Subagent Output Envelope v1 are the current
+  dry-run-first code boundaries for planning one loop and returning selected
+  role outputs without mutating research_thread or live stores.
 - KG ingest preview remains deferred until research-value artifacts prove what
   should be remembered.
 - Treat old autonomy-pulse branches, old mission IDs, Sprint Executor history,

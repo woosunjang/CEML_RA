@@ -56,6 +56,7 @@ which python
 export GEMINI_API_KEY="여기에_키_입력"
 export S2_API_KEY="여기에_키_입력"
 export SLACK_WEBHOOK_API="여기에_웹훅_URL_입력"
+export OPENAI_API_KEY="여기에_키_입력"
 ```
 
 적용:
@@ -78,9 +79,18 @@ python run.py daily
 
 ## Step 3: launchd 서비스 등록 (자동 실행)
 
-### 3-1. plist 파일 수정
+### 3-1. host-local plist 파일 생성
 
-프로젝트에 포함된 `com.ceml.paper-scout.plist` 파일을 열어서 아래 값들을 **이 맥미니 환경에 맞게 수정**합니다:
+프로젝트에 포함된 `com.ceml.paper-scout.plist`는 template입니다. 실제 API key,
+Slack webhook, local path를 이 tracked 파일에 직접 쓰지 않습니다. 먼저 host-local
+copy를 만들고, 그 파일만 이 맥미니 환경에 맞게 수정합니다:
+
+```bash
+cd ~/Dropbox/Dev/CEML_RA/lab-paper-scout
+cp com.ceml.paper-scout.plist com.ceml.paper-scout.local.plist
+```
+
+`com.ceml.paper-scout.local.plist`에서 아래 값을 수정합니다:
 
 ```xml
 <!-- Step 1에서 확인한 Python 경로 -->
@@ -96,19 +106,23 @@ python run.py daily
 <string>실제_키_값</string>
 <key>SLACK_WEBHOOK_API</key>
 <string>실제_웹훅_URL</string>
+<key>OPENAI_API_KEY</key>
+<string>실제_키_값</string>
 
 <!-- PATH에 Python 경로 포함 -->
 <key>PATH</key>
 <string>/Users/<username>/anaconda3/envs/lab-research-agents/bin:/usr/local/bin:/usr/bin:/bin</string>
 ```
 
-> ⚠️ **중요**: launchd는 `.zshrc`를 읽지 않으므로 API 키를 plist 안에 직접 넣어야 합니다.
+> 중요: launchd는 `.zshrc`를 읽지 않으므로 API 키는 launchd가 읽는 host-local plist
+> 안에 있어야 합니다. 단, repo에 commit되는 `com.ceml.paper-scout.plist`에는 절대 실제
+> 값을 넣지 않습니다. `com.ceml.paper-scout.local.plist`는 `.gitignore` 대상입니다.
 
 ### 3-2. 서비스 등록
 
 ```bash
-# LaunchAgents 폴더에 복사
-cp ~/Dropbox/Dev/CEML_RA/lab-paper-scout/com.ceml.paper-scout.plist ~/Library/LaunchAgents/
+# LaunchAgents 폴더에 host-local plist 복사
+cp ~/Dropbox/Dev/CEML_RA/lab-paper-scout/com.ceml.paper-scout.local.plist ~/Library/LaunchAgents/com.ceml.paper-scout.plist
 
 # 서비스 로드 (즉시 시작)
 launchctl load ~/Library/LaunchAgents/com.ceml.paper-scout.plist

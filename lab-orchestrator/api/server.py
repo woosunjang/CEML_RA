@@ -194,6 +194,251 @@ async def get_research_thread_markdown(thread_id: str):
     }
 
 
+@app.get("/research/threads/{thread_id}/context")
+async def get_research_thread_context_bundle(
+    thread_id: str,
+    trigger_type: str = "on_demand",
+    trigger_summary: str = "read-only research context review",
+):
+    """Build a read-only Research Context Bundle preview for one thread."""
+    from orchestrator.research_context_bundle import preview_or_write_research_context_bundle
+
+    thread_id = _validate_research_thread_id(thread_id)
+    try:
+        payload = preview_or_write_research_context_bundle(
+            thread_id=thread_id,
+            trigger_type=trigger_type,
+            trigger_summary=trigger_summary,
+            execute=False,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    payload["read_only"] = True
+    return payload
+
+
+def _evidence_matrix_request(body: dict) -> tuple[str, str, int, bool]:
+    trigger_type = str(body.get("trigger_type", "on_demand"))
+    trigger_summary = str(body.get("trigger_summary", "UI evidence matrix review")).strip()
+    if not trigger_summary:
+        raise HTTPException(status_code=400, detail="trigger_summary is required")
+    raw_max_rows = body.get("max_rows", 12)
+    try:
+        max_rows = int(raw_max_rows)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="max_rows must be an integer") from None
+    if max_rows < 1 or max_rows > 50:
+        raise HTTPException(status_code=400, detail="max_rows must be between 1 and 50")
+    confirm_artifact_write = body.get("confirm_artifact_write") is True
+    return trigger_type, trigger_summary, max_rows, confirm_artifact_write
+
+
+def _run_evidence_matrix_action(thread_id: str, body: dict, *, execute: bool):
+    from orchestrator.research_evidence_matrix import preview_or_write_evidence_matrix
+
+    thread_id = _validate_research_thread_id(thread_id)
+    trigger_type, trigger_summary, max_rows, confirm_artifact_write = _evidence_matrix_request(body)
+    if execute and not confirm_artifact_write:
+        raise HTTPException(status_code=400, detail="confirm_artifact_write=true is required for evidence matrix writes")
+    try:
+        return preview_or_write_evidence_matrix(
+            thread_id=thread_id,
+            trigger_type=trigger_type,
+            trigger_summary=trigger_summary,
+            execute=execute,
+            max_rows=max_rows,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/research/threads/{thread_id}/evidence-matrix/preview")
+async def preview_research_thread_evidence_matrix(thread_id: str, body: dict = Body(default={})):
+    """Build a read-only Evidence Matrix review surface preview for one thread."""
+    return _run_evidence_matrix_action(thread_id, body, execute=False)
+
+
+@app.post("/research/threads/{thread_id}/evidence-matrix/write")
+async def write_research_thread_evidence_matrix(thread_id: str, body: dict = Body(...)):
+    """Write an Evidence Matrix local artifact after explicit confirmation."""
+    return _run_evidence_matrix_action(thread_id, body, execute=True)
+
+
+@app.post("/research/loops/preview")
+async def preview_research_loop_packet(body: dict = Body(...)):
+    """Build a read-only Research Loop Packet preview without writing artifacts."""
+    from orchestrator.research_loop_packet import preview_or_write_research_loop_packet
+
+    thread_id = _validate_research_thread_id(str(body.get("thread_id", "")))
+    trigger_type = str(body.get("trigger_type", "on_demand"))
+    trigger_summary = str(body.get("trigger_summary", "")).strip()
+    if not trigger_summary:
+        raise HTTPException(status_code=400, detail="trigger_summary is required")
+    try:
+        payload = preview_or_write_research_loop_packet(
+            thread_id=thread_id,
+            trigger_type=trigger_type,
+            trigger_summary=trigger_summary,
+            execute=False,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    payload["read_only"] = True
+    return payload
+
+
+@app.post("/research/subagent-envelopes/preview")
+async def preview_subagent_output_envelope(body: dict = Body(...)):
+    """Build a read-only Subagent Output Envelope preview from an inline loop packet."""
+    from orchestrator.subagent_output_envelope import build_subagent_output_envelope, render_subagent_output_envelope_markdown
+
+    loop_packet = body.get("loop_packet")
+    if not isinstance(loop_packet, dict):
+        raise HTTPException(status_code=400, detail="loop_packet object is required")
+    try:
+        envelope = build_subagent_output_envelope(
+            loop_packet=loop_packet,
+            role=str(body.get("role", "")),
+            output_type=str(body.get("output_type", "")),
+            summary=str(body.get("summary", "")),
+            loop_packet_ref="inline:api-preview",
+            missing_evidence=body.get("missing_evidence"),
+            counterarguments=body.get("counterarguments"),
+            failure_modes=body.get("failure_modes"),
+            artifact_candidates=body.get("artifact_candidates"),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return {
+        "schema_version": envelope["schema_version"],
+        "status": "would_write",
+        "dry_run": True,
+        "thread_id": envelope["thread_id"],
+        "loop_packet_id": envelope["loop_packet_id"],
+        "envelope_id": envelope["envelope_id"],
+        "envelope": envelope,
+        "preview_markdown": render_subagent_output_envelope_markdown(envelope),
+        "live_store_mutations": [],
+        "read_only": True,
+    }
+
+
+def _patch_review_request(body: dict) -> tuple[dict, str, str, bool]:
+    patch = body.get("patch")
+    if not isinstance(patch, dict):
+        raise HTTPException(status_code=400, detail="patch object is required")
+    reviewer = str(body.get("reviewer", "local_reviewer")).strip() or "local_reviewer"
+    review_note = str(body.get("review_note", "")).strip()
+    confirm_artifact_write = body.get("confirm_artifact_write") is True
+    return patch, reviewer, review_note, confirm_artifact_write
+
+
+def _run_patch_review_action(thread_id: str, body: dict, *, action: str):
+    from orchestrator.research_patch_review import process_research_patch_review
+
+    thread_id = _validate_research_thread_id(thread_id)
+    patch, reviewer, review_note, confirm_artifact_write = _patch_review_request(body)
+    try:
+        return process_research_patch_review(
+            thread_id=thread_id,
+            patch=patch,
+            action=action,
+            reviewer=reviewer,
+            review_note=review_note,
+            confirm_artifact_write=confirm_artifact_write,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/research/threads/{thread_id}/patches/preview")
+async def preview_research_thread_patch_review(thread_id: str, body: dict = Body(...)):
+    """Preview a research_thread patch review without writing artifacts."""
+    return _run_patch_review_action(thread_id, body, action="preview")
+
+
+@app.post("/research/threads/{thread_id}/patches/apply")
+async def apply_research_thread_patch_review(thread_id: str, body: dict = Body(...)):
+    """Apply a research_thread patch to local artifacts after explicit confirmation."""
+    return _run_patch_review_action(thread_id, body, action="apply")
+
+
+@app.post("/research/threads/{thread_id}/patches/reject")
+async def reject_research_thread_patch_review(thread_id: str, body: dict = Body(...)):
+    """Record a rejected research_thread patch without changing the thread artifact."""
+    return _run_patch_review_action(thread_id, body, action="reject")
+
+
+def _knowledge_accumulation_request(body: Optional[dict]) -> tuple[str, bool, int, bool, bool]:
+    body = body or {}
+    purpose = str(body.get("purpose", "research thread knowledge accumulation")).strip()
+    if not purpose:
+        raise HTTPException(status_code=400, detail="purpose is required")
+    include_pending_review = body.get("include_pending_review") is True
+    raw_max_records = body.get("max_records", 50)
+    try:
+        max_records = int(raw_max_records)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="max_records must be an integer") from None
+    if max_records < 1 or max_records > 200:
+        raise HTTPException(status_code=400, detail="max_records must be between 1 and 200")
+    confirm_artifact_write = body.get("confirm_artifact_write") is True
+    confirm_archival_enqueue = body.get("confirm_archival_enqueue") is True
+    return purpose, include_pending_review, max_records, confirm_artifact_write, confirm_archival_enqueue
+
+
+def _run_knowledge_accumulation_action(thread_id: str, body: Optional[dict], *, execute: bool, enqueue_archival: bool):
+    from orchestrator.research_knowledge_accumulation import preview_or_write_knowledge_records
+
+    thread_id = _validate_research_thread_id(thread_id)
+    purpose, include_pending_review, max_records, confirm_artifact_write, confirm_archival_enqueue = _knowledge_accumulation_request(body)
+    if execute and not confirm_artifact_write:
+        raise HTTPException(status_code=400, detail="confirm_artifact_write=true is required for knowledge record writes")
+    if enqueue_archival and not confirm_archival_enqueue:
+        raise HTTPException(status_code=400, detail="confirm_archival_enqueue=true is required for archival queue writes")
+    try:
+        return preview_or_write_knowledge_records(
+            thread_id=thread_id,
+            purpose=purpose,
+            execute=execute,
+            enqueue_archival=enqueue_archival,
+            include_pending_review=include_pending_review,
+            max_records=max_records,
+        )
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/research/threads/{thread_id}/knowledge/preview")
+async def preview_research_thread_knowledge_records(thread_id: str, body: Optional[dict] = Body(default=None)):
+    """Preview portable knowledge records from reviewed research_thread objects."""
+    return _run_knowledge_accumulation_action(thread_id, body, execute=False, enqueue_archival=False)
+
+
+@app.post("/research/threads/{thread_id}/knowledge/write")
+async def write_research_thread_knowledge_records(thread_id: str, body: dict = Body(...)):
+    """Write portable knowledge records as local durable artifacts."""
+    return _run_knowledge_accumulation_action(thread_id, body, execute=True, enqueue_archival=False)
+
+
+@app.post("/research/threads/{thread_id}/knowledge/enqueue-archival")
+async def enqueue_research_thread_knowledge_records(thread_id: str, body: dict = Body(...)):
+    """Write knowledge records and enqueue reviewed records for the archival worker."""
+    return _run_knowledge_accumulation_action(thread_id, body, execute=True, enqueue_archival=True)
+
+
 @app.get("/workspaces")
 async def list_workspaces():
     """List available workspaces."""

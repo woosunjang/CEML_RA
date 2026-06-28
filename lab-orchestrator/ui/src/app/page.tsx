@@ -5,7 +5,6 @@ import { Message, AgentInfo, Citation, Session } from "@/lib/types";
 import { sendChatStream, fetchAgents, checkHealth, switchModelProfile, fetchModelProfiles, fetchSessions, fetchSessionMessages, deleteSession } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import DebateView from "@/components/DebateView";
 
 const AGENT_COLORS: Record<string, string> = {
   literature: "hsl(239, 84%, 67%)",
@@ -97,6 +96,13 @@ export default function Home() {
     } catch { showToast("프로필 전환 실패"); }
   };
 
+  const refreshSessions = useCallback(async () => {
+    try {
+      const data = await fetchSessions();
+      setSessions(data.sessions);
+    } catch { /* ignore */ }
+  }, []);
+
   const handleSend = useCallback(async () => {
     if (!input.trim() || loading) return;
 
@@ -178,14 +184,7 @@ export default function Home() {
     setSteps([]);
     setLoading(false);
     refreshSessions();
-  }, [input, loading, conversationId, selectedAgent, debateMode]);
-
-  const refreshSessions = useCallback(async () => {
-    try {
-      const data = await fetchSessions();
-      setSessions(data.sessions);
-    } catch { /* ignore */ }
-  }, []);
+  }, [input, loading, conversationId, selectedAgent, debateMode, refreshSessions]);
 
   const handleNewChat = () => {
     setMessages([]);

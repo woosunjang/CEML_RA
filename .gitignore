@@ -24,6 +24,7 @@ lab-orchestrator/ui/out/
 lab-orchestrator/.env
 lab-orchestrator/.orchestrator.pid
 lab-orchestrator/logs/
+*.local.plist
 lab-paper-scout/logs/
 logs/
 

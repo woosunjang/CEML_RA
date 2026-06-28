@@ -14,7 +14,6 @@ interface DebateRound {
 
 interface DebateViewProps {
   rounds: DebateRound[];
-  finalAnswer: string;
   elapsedTotal?: number;
   complexity?: number;
   isStreaming?: boolean;
@@ -28,7 +27,6 @@ const PANELIST_CONFIG: Record<string, { icon: string; color: string; label: stri
 
 export default function DebateView({
   rounds,
-  finalAnswer,
   elapsedTotal,
   complexity,
   isStreaming,

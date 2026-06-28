@@ -54,6 +54,10 @@ class ResearchLoopPacketTests(unittest.TestCase):
             self.assertIn("stop_conditions", packet)
             self.assertIn("artifact_candidates", packet)
             self.assertIn("thread_patch_preview", packet)
+            self.assertIn("context_bundle", packet)
+            self.assertEqual(packet["context_bundle"]["trigger"]["type"], "on_demand")
+            self.assertEqual(packet["context_bundle"]["live_store_mutations"], [])
+            self.assertEqual(packet["thread_patch_preview"]["schema_version"], 2)
             self.assertIn("새 연구 claim", " ".join(packet["stop_conditions"]))
             self.assertEqual(packet["thread_patch_preview"]["research_state"], "loop_packet_planned")
 
@@ -74,6 +78,7 @@ class ResearchLoopPacketTests(unittest.TestCase):
             self.assertIn("## 목적", markdown)
             self.assertIn("## Selected Roles", markdown)
             self.assertIn("라이브 저장소 변경: 없음", markdown)
+            self.assertIn("Context Bundle ID", markdown)
             self.assertIn("새 연구 claim", markdown)
 
     def test_dry_run_does_not_write_or_mutate_thread(self):

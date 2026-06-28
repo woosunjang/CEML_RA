@@ -1,5 +1,85 @@
 # Task Log
 
+## 2026-06-14 — Requested residual Codex memory cleanup
+
+**Status:** Cleanup note filed; memory-layer refresh still controls generated
+memory Markdown/index updates.
+
+Created the allowed ad-hoc memory update note:
+
+```text
+/Users/woosun/.codex/memories/extensions/ad_hoc/notes/20260614191837-ceml-ra-residual-memory-cleanup.md
+```
+
+The note asks the memory layer to remove residual stale CEML_RA anchors that
+still appear in default retrieval or reusable knowledge, including old
+`docs/ceml-ra-2week-research-value-cycle.md` / `docs/artifact-runtime-boundary.md`
+keywords, old 2-week/RQF plans, old autonomy/runtime/status work, rare-earth
+proposal follow-ons, HRE/descriptor table suggestions, Work Package Planner
+output, and drift-prone commit/branch status facts.
+
+Current intended memory behavior: for CEML_RA, default to repo-local truth
+(`AGENTS.md`, `.agents/context/HANDOFF.md`, `.agents/context/TASK_LOG.md`,
+`.agents/context/REMOTE_ENVIRONMENT.md`,
+`docs/ceml-ra-ground-goal-and-phases.md`,
+`docs/ceml-ra-research-loop-contract-v1.md`, current git state, and the user's
+latest instruction). Preserve only durable preferences such as integrated
+research colleague direction, shared `research_thread` spine, Coordinator plus
+subagents, Korean-first reviewable outputs, dry-run-first boundaries, and
+`live_store_mutations: []`.
+
+No repo source code, runtime services, Slack, Scout DB, Qdrant, Neo4j, Graphiti,
+KG/RAG, durable artifact root, or live store state was mutated.
+
+## 2026-06-14 — Promoted Subagent Output Envelope branch locally
+
+**Status:** Complete locally on `main`.
+
+Fast-forwarded local `main` from `0a5b274` to:
+
+```text
+7277f6b feat: add subagent output envelope planner
+```
+
+Deleted the merged local `codex/ceml-ra-subagent-output-envelope` branch with
+normal `git branch -d`. `origin/main` remains at `0a5b274` because pushing to
+GitHub requires explicit user approval.
+
+Verification:
+
+```text
+env PYTHONPYCACHEPREFIX=/tmp/ceml_ra_pycache python3 -m py_compile orchestrator/subagent_output_envelope.py tools/subagent_output_envelope_plan.py tests/test_subagent_output_envelope.py
+env PYTHONPYCACHEPREFIX=/tmp/ceml_ra_pycache python3 tests/test_subagent_output_envelope.py
+```
+
+The direct unittest run passed 6 tests. No Slack, runtime services, Scout DB,
+Qdrant, Neo4j, Graphiti, KG/RAG, durable artifact root, or live store state was
+mutated.
+
+## 2026-06-12 — Implemented Subagent Output Envelope v1
+
+**Status:** Complete on `codex/ceml-ra-subagent-output-envelope`.
+
+Promoted `Research Loop Packet v1` to `main`, pushed GitHub `main` to
+`0a5b274`, and deleted the merged local `codex/ceml-ra-loop-packet` branch with
+normal `git branch -d`.
+
+Implemented a dry-run-first envelope for returning selected loop-packet role
+outputs to Coordinator:
+
+```text
+lab-orchestrator/orchestrator/subagent_output_envelope.py
+lab-orchestrator/tools/subagent_output_envelope_plan.py
+lab-orchestrator/tests/test_subagent_output_envelope.py
+```
+
+The envelope accepts a Research Loop Packet JSON path, selected role, output
+type, and explicitly supplied Korean-first summary/review notes. It writes only
+with `--execute`, produces JSON/Markdown plus a thread patch preview, and keeps
+`live_store_mutations: []`. It does not execute subagents, call LLMs, create
+research claims, mutate `research_thread`, or touch Slack, runtime services,
+Scout DB, Qdrant, Neo4j, Graphiti, KG, or RAG stores.
+
 ## 2026-06-12 — Implemented Research Loop Packet v1
 
 **Status:** Complete on `codex/ceml-ra-loop-packet`.

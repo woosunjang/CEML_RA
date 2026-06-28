@@ -18,6 +18,7 @@ from orchestrator.research_thread import (  # noqa: E402
     build_seed_research_thread,
     list_research_threads,
     load_research_thread,
+    normalize_research_thread,
     research_thread_paths,
     render_research_thread_markdown,
     seed_research_threads,
@@ -38,11 +39,16 @@ class ResearchThreadTests(unittest.TestCase):
         thread = build_seed_research_thread("materials_ontology_kg", created_at=FIXED_NOW)
 
         validate_research_thread(thread)
-        self.assertEqual(thread["schema_version"], 1)
+        self.assertEqual(thread["schema_version"], 2)
         self.assertEqual(thread["thread_id"], "materials_ontology_kg")
         self.assertEqual(thread["claims"], [])
         self.assertEqual(thread["evidence"], [])
         self.assertFalse(thread["metadata"]["contains_literature_claims"])
+        self.assertEqual(thread["metadata"]["authority_model"], "research_thread_v2")
+        self.assertEqual(thread["source_signals"][0]["authority_state"], "ground_contract")
+        self.assertEqual(thread["source_signals"][0]["review_state"], "reviewed")
+        self.assertEqual(thread["source_signals"][0]["support_state"], "contract")
+        self.assertIn("object_ref", thread["source_signals"][0])
         self.assertEqual(len(thread["next_actions"]), 3)
         self.assertIn("ground contract", thread["source_signals"][0]["text"])
 
@@ -55,6 +61,59 @@ class ResearchThreadTests(unittest.TestCase):
         self.assertIn("## Evidence", markdown)
         self.assertIn("_None recorded yet._", markdown)
         self.assertIn("No KG ingest is proposed", markdown)
+        self.assertIn("Authority: ground_contract / Review: reviewed / Support: contract", markdown)
+
+    def test_legacy_v1_thread_loads_as_v2_without_losing_sections(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            artifacts = Path(tmp) / "artifacts"
+            paths = research_thread_paths("materials_ontology_kg", artifacts)
+            paths.json_path.parent.mkdir(parents=True)
+            legacy = {
+                "schema_version": 1,
+                "thread_id": "materials_ontology_kg",
+                "topic": "materials_ontology_kg",
+                "research_state": "seeded",
+                "created_at": FIXED_NOW,
+                "updated_at": FIXED_NOW,
+                "source_signals": [
+                    {
+                        "id": "ground_contract.phase1",
+                        "text": "Legacy v1 source signal.",
+                        "status": "accepted",
+                        "created_at": FIXED_NOW,
+                        "source_refs": ["docs/ceml-ra-ground-goal-and-phases.md"],
+                        "confidence": "contract",
+                    }
+                ],
+                "claims": [],
+                "evidence": [],
+                "counterarguments": [],
+                "idea_candidates": [],
+                "failure_modes": [],
+                "decisions": [],
+                "next_actions": [],
+                "kg_ingest_preview": [],
+                "metadata": {"contains_literature_claims": False},
+            }
+            paths.json_path.write_text(json.dumps(legacy, ensure_ascii=False), encoding="utf-8")
+
+            loaded = load_research_thread("materials_ontology_kg", artifacts_dir=artifacts)
+
+            self.assertEqual(loaded["schema_version"], 2)
+            self.assertEqual(loaded["source_signals"][0]["text"], "Legacy v1 source signal.")
+            self.assertEqual(loaded["source_signals"][0]["object_ref"], "source_signals:ground_contract.phase1")
+            self.assertEqual(loaded["source_signals"][0]["authority_state"], "ground_contract")
+            self.assertEqual(loaded["source_signals"][0]["review_state"], "reviewed")
+            self.assertEqual(loaded["source_signals"][0]["support_state"], "contract")
+            self.assertEqual(loaded["metadata"]["authority_model"], "research_thread_v2")
+            self.assertEqual(loaded["metadata"]["object_model"], "section_items_with_object_refs")
+
+    def test_normalize_research_thread_preserves_v2_thread(self):
+        thread = build_seed_research_thread("rare_earth_magnets", created_at=FIXED_NOW)
+
+        normalized = normalize_research_thread(thread)
+
+        self.assertEqual(normalized, thread)
 
     def test_dry_run_does_not_write_files(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -272,14 +331,61 @@ class ResearchThreadTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate item id"):
             apply_research_thread_patch(thread, patch, created_at=FIXED_NOW)
 
-    def test_research_thread_patch_rejects_invalid_section(self):
+    def test_research_thread_patch_v2_can_append_claims_with_authority_fields(self):
         thread = build_seed_research_thread("rare_earth_magnets", created_at=FIXED_NOW)
         patch = {
+            "schema_version": 2,
             "append": {
                 "claims": [
                     {
-                        "id": "claim.not.allowed",
+                        "id": "claim.test.patch_v2",
+                        "text": "패치 v2는 claim도 reviewable preview로 다룰 수 있다.",
+                        "status": "candidate",
+                        "authority_state": "thread_local",
+                        "review_state": "pending_review",
+                        "support_state": "needs_evidence",
+                        "artifact_refs": ["artifact:test"],
+                    }
+                ]
+            }
+        }
+
+        updated, changes = apply_research_thread_patch(thread, patch, created_at=FIXED_NOW)
+
+        self.assertEqual(changes["appended"]["claims"], 1)
+        claim = updated["claims"][0]
+        self.assertEqual(claim["id"], "claim.test.patch_v2")
+        self.assertEqual(claim["review_state"], "pending_review")
+        self.assertEqual(claim["support_state"], "needs_evidence")
+        self.assertEqual(claim["artifact_refs"], ["artifact:test"])
+
+    def test_research_thread_patch_v1_still_rejects_new_sections(self):
+        thread = build_seed_research_thread("rare_earth_magnets", created_at=FIXED_NOW)
+        patch = {
+            "schema_version": 1,
+            "append": {
+                "claims": [
+                    {
+                        "id": "claim.not.allowed.in_v1",
                         "text": "v1 patch CLI에서는 claims를 직접 패치하지 않는다.",
+                        "status": "candidate",
+                    }
+                ]
+            }
+        }
+
+        with self.assertRaisesRegex(ValueError, "unsupported patch section"):
+            apply_research_thread_patch(thread, patch, created_at=FIXED_NOW)
+
+    def test_research_thread_patch_rejects_unknown_section(self):
+        thread = build_seed_research_thread("rare_earth_magnets", created_at=FIXED_NOW)
+        patch = {
+            "schema_version": 2,
+            "append": {
+                "not_a_section": [
+                    {
+                        "id": "claim.not.allowed",
+                        "text": "존재하지 않는 section이다.",
                         "status": "candidate",
                     }
                 ]
