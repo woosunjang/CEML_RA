@@ -154,9 +154,11 @@ lab-paper-scout/
 ## M2 Pro 맥미니 launchd 등록
 
 ```bash
-# plist 설치 후 자동 시작 등록
-cp config/com.lab-paper-scout.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.lab-paper-scout.plist
+# tracked plist는 template입니다. 실제 키는 ignored local plist에만 넣습니다.
+cp com.ceml.paper-scout.plist com.ceml.paper-scout.local.plist
+$EDITOR com.ceml.paper-scout.local.plist
+cp com.ceml.paper-scout.local.plist ~/Library/LaunchAgents/com.ceml.paper-scout.plist
+launchctl load ~/Library/LaunchAgents/com.ceml.paper-scout.plist
 
 # 상태 확인
 launchctl list | grep paper-scout
