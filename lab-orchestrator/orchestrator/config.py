@@ -36,6 +36,12 @@ GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
 QDRANT_URL: str = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_COLLECTION: str = os.getenv("QDRANT_COLLECTION", "lab_research_chunks")
 
+# Neo4j (Graphiti archival memory)
+NEO4J_URI: str = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER: str = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD: str = os.getenv("NEO4J_PASSWORD", "")
+NEO4J_DATABASE: str = os.getenv("NEO4J_DATABASE", "neo4j")
+
 # Scout
 SCOUT_DB_PATH: Path = Path(os.getenv(
     "SCOUT_DB_PATH",
@@ -46,9 +52,6 @@ SCOUT_DB_PATH: Path = Path(os.getenv(
 IMAGE_PROVIDER: str = os.getenv("IMAGE_PROVIDER", "google")  # google | openai
 IMAGE_MODEL_GOOGLE: str = os.getenv("IMAGE_MODEL_GOOGLE", "gemini-3-pro-image-preview")
 IMAGE_MODEL_OPENAI: str = os.getenv("IMAGE_MODEL_OPENAI", "gpt-image-2")
-
-# FalkorDB (Graphiti archival memory)
-FALKORDB_URI: str = os.getenv("FALKORDB_URI", "falkor://localhost:6379")
 
 PROJECT_ROOT: Path = _PROJECT_ROOT
 

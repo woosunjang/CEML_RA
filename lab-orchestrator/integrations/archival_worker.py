@@ -25,7 +25,7 @@ from pathlib import Path
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from orchestrator.config import ARCHIVAL_QUEUE_DIR, FALKORDB_URI
+from orchestrator.config import ARCHIVAL_QUEUE_DIR
 
 logging.basicConfig(
     level=logging.INFO,
@@ -73,50 +73,17 @@ async def _get_graphiti():
         return _graphiti_instance
 
     try:
-        from graphiti_core import Graphiti
-        from graphiti_core.llm_client import LLMConfig, OpenAIClient
-        from graphiti_core.embedder.openai import (
-            OpenAIEmbedder, OpenAIEmbedderConfig,
-        )
-        from graphiti_core.driver.falkordb_driver import FalkorDriver
-        from orchestrator.config import OPENAI_EMBEDDING_MODEL
+        from orchestrator.graphiti_client import create_graphiti_client
 
-        # Parse FalkorDB URI
-        uri = FALKORDB_URI
-        if uri.startswith("falkor://"):
-            uri = uri[len("falkor://"):]
-        parts = uri.split(":")
-        host = parts[0]
-        port = int(parts[1]) if len(parts) > 1 else 6379
-
-        extraction_model = "gpt-5.4-nano"
-        llm_config = LLMConfig(
-            model=extraction_model,
-            small_model=extraction_model,
-            temperature=0.0,
-        )
-        reasoning = "low"  # gpt-5.4 series
-        llm_client = OpenAIClient(config=llm_config, reasoning=reasoning)
-
-        embedder = OpenAIEmbedder(
-            config=OpenAIEmbedderConfig(
-                model=OPENAI_EMBEDDING_MODEL,
-            )
-        )
-
-        graph_driver = FalkorDriver(
-            host=host,
-            port=port,
-        )
-
-        _graphiti_instance = Graphiti(
-            graph_driver=graph_driver,
-            llm_client=llm_client,
-            embedder=embedder,
-        )
+        _graphiti_instance, cfg = create_graphiti_client()
         await _graphiti_instance.build_indices_and_constraints()
 
-        logger.info(f"Graphiti connected: {host}:{port}, model={extraction_model}")
+        logger.info(
+            "Graphiti connected: %s database=%s model=%s",
+            cfg.neo4j_uri,
+            cfg.neo4j_database,
+            cfg.extraction_model,
+        )
         return _graphiti_instance
 
     except Exception as e:

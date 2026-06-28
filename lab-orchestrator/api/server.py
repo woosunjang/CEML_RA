@@ -439,6 +439,49 @@ async def enqueue_research_thread_knowledge_records(thread_id: str, body: dict =
     return _run_knowledge_accumulation_action(thread_id, body, execute=True, enqueue_archival=True)
 
 
+def _weekly_loop_request(body: Optional[dict]) -> dict:
+    body = body or {}
+    raw_days = body.get("days", 7)
+    raw_scout_limit = body.get("scout_limit", 5)
+    raw_rag_limit = body.get("rag_limit", 5)
+    raw_kg_limit = body.get("kg_limit", 5)
+    try:
+        days = int(raw_days)
+        scout_limit = int(raw_scout_limit)
+        rag_limit = int(raw_rag_limit)
+        kg_limit = int(raw_kg_limit)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="days and source limits must be integers") from None
+    if days < 1 or days > 31:
+        raise HTTPException(status_code=400, detail="days must be between 1 and 31")
+    if min(scout_limit, rag_limit, kg_limit) < 0:
+        raise HTTPException(status_code=400, detail="source limits must be non-negative")
+    return {
+        "query": body.get("query"),
+        "days": days,
+        "execute": body.get("execute") is True,
+        "use_live_memory": body.get("use_live_memory", True) is True,
+        "scout_limit": scout_limit,
+        "rag_limit": rag_limit,
+        "kg_limit": kg_limit,
+    }
+
+
+@app.post("/research/threads/{thread_id}/weekly-loop/run")
+async def run_research_thread_weekly_loop(thread_id: str, body: Optional[dict] = Body(default=None)):
+    """Run or preview the Weekly Useful Research Loop v0."""
+    from orchestrator.research_weekly_loop import preview_or_run_weekly_loop
+
+    thread_id = _validate_research_thread_id(thread_id)
+    kwargs = _weekly_loop_request(body)
+    try:
+        return await preview_or_run_weekly_loop(thread_id=thread_id, **kwargs)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @app.get("/workspaces")
 async def list_workspaces():
     """List available workspaces."""

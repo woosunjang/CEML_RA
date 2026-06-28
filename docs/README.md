@@ -72,6 +72,39 @@ Knowledge accumulation:
   and `confirm_archival_enqueue: true` are present. It queues local jobs; it
   does not call Graphiti or mutate live KG/RAG/Slack/runtime state directly.
 
+Weekly Useful Research Loop:
+
+- `lab-orchestrator/tools/research_weekly_loop.py` runs the first actually
+  usable weekly loop. v0 is intentionally constrained to
+  `materials_ontology_kg`.
+- Live-memory acceptance uses the M2 Mac Mini runtime, not the development Mac.
+  Start Qdrant and Neo4j from `lab-orchestrator/docker-compose.yml`; keep
+  `NEO4J_PASSWORD`, OpenAI keys, and Scout DB paths in local env or `.env`.
+- `lab-orchestrator/tools/research_memory_healthcheck.py --json --deep` checks
+  artifact root, `materials_ontology_kg` thread, Scout DB, Qdrant, Neo4j,
+  Graphiti import/init, and OpenAI embedding readiness before a real run.
+- `POST /research/threads/{thread_id}/weekly-loop/run` previews or runs the
+  same loop. `execute=true` writes a Korean weekly brief, reusable memory note,
+  and `research_thread` update. By default it also attempts Graphiti and Qdrant
+  live memory writes; set `use_live_memory=false` for artifact-only runs. The
+  response includes `source_availability` and `preflight_summary` so
+  `partial_failure` has actionable causes.
+- Artifacts are written under `research_weekly_loops/{thread_id}/` and
+  `research_memory_notes/{thread_id}/`. The success criterion is not another
+  review surface; it is that a later weekly run can reuse an earlier memory
+  note with a citation.
+- M2 manual bring-up sequence:
+
+  ```bash
+  cd /Users/mersoom/Dropbox/Dev/CEML_RA/lab-orchestrator
+  docker compose up -d qdrant neo4j
+  export CEML_RA_ARTIFACTS_DIR=/Users/mersoom/Dropbox/Dev/CEML/RA_artifacts
+  export SCOUT_DB_PATH=/Users/mersoom/Dropbox/Dev/CEML_RA/lab-paper-scout/data/paper_scout.db
+  python tools/research_memory_healthcheck.py --json --deep
+  cd ../lab-paper-scout && python run.py run
+  cd ../lab-orchestrator && python tools/research_weekly_loop.py --execute
+  ```
+
 Patch review workflow:
 
 - `POST /research/threads/{thread_id}/patches/preview` previews an edited patch

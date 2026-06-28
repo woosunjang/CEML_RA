@@ -21,6 +21,20 @@ optional archival worker queue jobs. This creates an actual accumulation path
 from thread memory toward Graphiti without directly mutating live KG/RAG/Slack
 stores.
 
+**Implementation note:** Weekly Useful Research Loop v0 shifts the next product
+center away from additional review surfaces. The first pilot is
+`materials_ontology_kg`: a manual CLI/API weekly run reads `research_thread`,
+RA artifacts, Scout, RAG, and KG memory, writes a Korean weekly brief plus
+reusable memory note, updates the thread, and attempts live Graphiti/Qdrant
+memory writes. Scheduler activation remains deferred until two manual runs
+prove that prior memory is reused.
+
+**Implementation note:** M2 Live Memory Bring-up makes the M2 Mac Mini the
+runtime acceptance target for live memory. Graphiti is moved to the canonical
+Neo4j backend, Qdrant and Neo4j are started from `lab-orchestrator/docker-compose.yml`,
+and a `research_memory_healthcheck.py` preflight reports Scout/Qdrant/Neo4j/
+Graphiti/OpenAI readiness before weekly runs.
+
 ## Purpose
 
 이 문서는 CEML_RA의 다음 개발 방향을 repo-local truth로 저장한다. 기능 구현은

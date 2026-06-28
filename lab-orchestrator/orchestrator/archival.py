@@ -1,5 +1,5 @@
 """
-Lab Orchestrator — Archival Memory (Graphiti + FalkorDB)
+Lab Orchestrator — Archival Memory (Graphiti + Neo4j)
 
 Temporal knowledge graph for long-term memory.
 Automatically extracts entities, relationships, and time-aware facts
@@ -36,60 +36,15 @@ async def _get_graphiti():
             return _graphiti_instance
 
         try:
-            from graphiti_core import Graphiti
-            from graphiti_core.llm_client import LLMConfig, OpenAIClient
-            from graphiti_core.embedder.openai import (
-                OpenAIEmbedder, OpenAIEmbedderConfig,
-            )
-            from graphiti_core.driver.falkordb_driver import FalkorDriver
-            from orchestrator.config import (
-                OPENAI_EMBEDDING_MODEL,
-            )
+            from orchestrator.graphiti_client import create_graphiti_client
 
-            # Parse FalkorDB host/port from config
-            falkor_host = "localhost"
-            falkor_port = 6379
-
-            # Use Nano model for extraction (cost-efficient)
-            from orchestrator.model_profiles import profile_manager
-            extraction_model = "gpt-5.4-nano"
-            if profile_manager.active_profile == "cost":
-                extraction_model = "gpt-4.1-nano"
-
-            llm_config = LLMConfig(
-                model=extraction_model,
-                small_model=extraction_model,
-                temperature=0.0,
-            )
-            # Graphiti defaults reasoning_effort='minimal' which gpt-5.4 doesn't support.
-            # gpt-5.4 series accepts: 'none', 'low', 'medium', 'high', 'xhigh'.
-            # gpt-4.1 series ignores reasoning param (non-reasoning model).
-            reasoning = "low" if extraction_model.startswith("gpt-5") else None
-            llm_client = OpenAIClient(config=llm_config, reasoning=reasoning)
-
-            embedder = OpenAIEmbedder(
-                config=OpenAIEmbedderConfig(
-                    model=OPENAI_EMBEDDING_MODEL,
-                )
-            )
-
-            # Create FalkorDB driver directly
-            graph_driver = FalkorDriver(
-                host=falkor_host,
-                port=falkor_port,
-            )
-
-            _graphiti_instance = Graphiti(
-                graph_driver=graph_driver,
-                llm_client=llm_client,
-                embedder=embedder,
-            )
+            _graphiti_instance, cfg = create_graphiti_client()
             await _graphiti_instance.build_indices_and_constraints()
 
             _initialized = True
             logger.info(
-                f"Graphiti initialized: FalkorDB={falkor_host}:{falkor_port}, "
-                f"extraction_model={extraction_model}"
+                f"Graphiti initialized: Neo4j={cfg.neo4j_uri}, "
+                f"database={cfg.neo4j_database}, extraction_model={cfg.extraction_model}"
             )
             return _graphiti_instance
 
@@ -109,7 +64,7 @@ class ArchivalMemory:
         user_message: str,
         assistant_message: str,
         agent_name: str = "orchestrator",
-    ):
+    ) -> bool:
         """Ingest a conversation turn as a Graphiti episode.
 
         Graphiti automatically extracts:
@@ -117,15 +72,36 @@ class ArchivalMemory:
           - Relationships (decided, uses, compared_with, etc.)
           - Temporal facts (when decisions were made)
         """
+        result = await self.ingest_turn_result(
+            conversation_id=conversation_id,
+            user_message=user_message,
+            assistant_message=assistant_message,
+            agent_name=agent_name,
+        )
+        return result["status"] == "ingested"
+
+    async def ingest_turn_result(
+        self,
+        conversation_id: str,
+        user_message: str,
+        assistant_message: str,
+        agent_name: str = "orchestrator",
+    ) -> dict:
+        """Ingest a conversation turn and return structured status details."""
         graphiti = await _get_graphiti()
         if not graphiti:
-            return
+            return {
+                "status": "failed",
+                "conversation_id": conversation_id,
+                "live_store_mutations": [],
+                "error": "Graphiti client is unavailable",
+            }
 
         try:
             from graphiti_core.nodes import EpisodeType
 
             ts = datetime.now(timezone.utc)
-            # Remove hyphens from IDs (RediSearch treats them as operators)
+            # Keep episode names compact and backend-safe.
             safe_id = conversation_id.replace("-", "")
             episode_name = f"{safe_id[:12]}_{ts.strftime('%H%M%S')}"
 
@@ -154,9 +130,23 @@ class ArchivalMemory:
                 f"Archival: ingested episode {episode_name} "
                 f"({len(episode_body)} chars)"
             )
+            return {
+                "status": "ingested",
+                "conversation_id": conversation_id,
+                "episode_name": episode_name,
+                "live_store_mutations": [
+                    {"type": "graphiti_ingest", "conversation_id": conversation_id, "episode_name": episode_name}
+                ],
+            }
 
         except Exception as e:
             logger.warning(f"Archival ingestion failed: {e}")
+            return {
+                "status": "failed",
+                "conversation_id": conversation_id,
+                "live_store_mutations": [],
+                "error": str(e),
+            }
 
     async def search(
         self,
@@ -207,47 +197,60 @@ class ArchivalMemory:
             return {"nodes": [], "edges": []}
 
         try:
-            from falkordb import FalkorDB
+            from neo4j import GraphDatabase
+            from orchestrator.config import NEO4J_DATABASE, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
 
-            db = FalkorDB(host="localhost", port=6379)
-            graph = db.select_graph("graphiti")
-
-            # Get entities (nodes)
-            node_result = graph.query(
-                f"MATCH (n:Entity) "
-                f"OPTIONAL MATCH (n)-[r]-() "
-                f"WITH n, count(r) as degree "
-                f"RETURN n.name, n.summary, n.group_id, degree "
-                f"ORDER BY degree DESC LIMIT {limit}"
-            )
+            driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
             nodes = []
-            node_set = set()
-            for row in node_result.result_set:
-                name = row[0]
-                if name and name not in node_set:
-                    node_set.add(name)
+            node_ids = set()
+            edges = []
+            with driver.session(database=NEO4J_DATABASE) as session:
+                node_result = session.run(
+                    """
+                    MATCH (n)
+                    OPTIONAL MATCH (n)-[r]-()
+                    WITH n, count(r) AS degree
+                    RETURN elementId(n) AS id,
+                           coalesce(n.name, n.uuid, n.id, elementId(n)) AS name,
+                           coalesce(n.summary, n.description, '') AS summary,
+                           coalesce(n.group_id, '') AS group_id,
+                           degree
+                    ORDER BY degree DESC
+                    LIMIT $limit
+                    """,
+                    limit=limit,
+                )
+                for record in node_result:
+                    node_id = record["id"]
+                    node_ids.add(node_id)
                     nodes.append({
-                        "id": name,
-                        "summary": row[1] or "",
-                        "group": row[2] or "default",
-                        "degree": row[3] or 0,
+                        "id": node_id,
+                        "name": record["name"] or node_id,
+                        "summary": record["summary"] or "",
+                        "group": record["group_id"] or "default",
+                        "degree": record["degree"] or 0,
                     })
 
-            # Get relationships (edges)
-            edge_result = graph.query(
-                f"MATCH (a:Entity)-[r:RELATES_TO]->(b:Entity) "
-                f"RETURN a.name, b.name, r.name, r.fact "
-                f"LIMIT {limit * 2}"
-            )
-            edges = []
-            for row in edge_result.result_set:
-                if row[0] in node_set and row[1] in node_set:
-                    edges.append({
-                        "source": row[0],
-                        "target": row[1],
-                        "relation": row[2] or "",
-                        "fact": row[3] or "",
-                    })
+                edge_result = session.run(
+                    """
+                    MATCH (a)-[r]->(b)
+                    RETURN elementId(a) AS source,
+                           elementId(b) AS target,
+                           type(r) AS relation,
+                           coalesce(r.fact, r.name, '') AS fact
+                    LIMIT $limit
+                    """,
+                    limit=limit * 2,
+                )
+                for record in edge_result:
+                    if record["source"] in node_ids and record["target"] in node_ids:
+                        edges.append({
+                            "source": record["source"],
+                            "target": record["target"],
+                            "relation": record["relation"] or "",
+                            "fact": record["fact"] or "",
+                        })
+            driver.close()
 
             logger.info(
                 f"Graph data: {len(nodes)} nodes, {len(edges)} edges"
@@ -257,6 +260,13 @@ class ArchivalMemory:
         except Exception as e:
             logger.warning(f"Graph data extraction failed: {e}")
             return {"nodes": [], "edges": []}
+
+    async def healthcheck(self) -> dict:
+        """Return whether Graphiti can initialize against Neo4j."""
+        graphiti = await _get_graphiti()
+        if not graphiti:
+            return {"status": "failed", "backend": "neo4j", "error": "Graphiti client is unavailable"}
+        return {"status": "ok", "backend": "neo4j"}
 
 
 # Module-level singleton

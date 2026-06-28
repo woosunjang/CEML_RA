@@ -2,6 +2,7 @@ version: '3.8'
 services:
   qdrant:
     image: qdrant/qdrant:latest
+    container_name: lab_qdrant
     ports:
       - "6333:6333"
       - "6334:6334"
@@ -9,5 +10,21 @@ services:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
 
+  neo4j:
+    image: neo4j:5
+    container_name: lab_neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?Set NEO4J_PASSWORD in your shell or lab-orchestrator/.env}"
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    restart: unless-stopped
+
 volumes:
   qdrant_data:
+  neo4j_data:
+  neo4j_logs:

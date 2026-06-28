@@ -4,6 +4,9 @@ Lab Orchestrator — Qdrant Vector Store
 Ported from lab-research-agents with adapted imports.
 """
 
+from __future__ import annotations
+
+import uuid
 from typing import Optional
 
 from qdrant_client import QdrantClient
@@ -18,6 +21,9 @@ from qdrant_client.models import (
 
 from orchestrator.config import QDRANT_URL, QDRANT_COLLECTION
 from llm.pool import embed_texts
+
+
+MEMORY_NOTE_DOCUMENT_TYPE = "research_memory_note"
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +46,136 @@ def _get_client() -> Optional[QdrantClient]:
         except Exception:
             return None
     return _client
+
+
+def _ensure_collection_for_vector(client: QdrantClient, vector_size: int) -> None:
+    collections = client.get_collections().collections
+    if any(collection.name == QDRANT_COLLECTION for collection in collections):
+        return
+    client.create_collection(
+        collection_name=QDRANT_COLLECTION,
+        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+    )
+
+
+def memory_note_chunk_id(*, thread_id: str, memory_note_id: str) -> str:
+    return f"research_memory_note:{thread_id}:{memory_note_id}"
+
+
+def build_memory_note_payload(
+    *,
+    thread_id: str,
+    memory_note_id: str,
+    artifact_ref: str,
+    text: str,
+    created_at: str,
+    claim_refs: list[str] | None = None,
+    source_refs: list[str] | None = None,
+) -> dict:
+    return {
+        "chunk_id": memory_note_chunk_id(thread_id=thread_id, memory_note_id=memory_note_id),
+        "title": f"Weekly research memory note: {thread_id}",
+        "text": text,
+        "thread_id": thread_id,
+        "memory_note_id": memory_note_id,
+        "artifact_ref": artifact_ref,
+        "claim_refs": list(claim_refs or []),
+        "source_refs": list(source_refs or []),
+        "created_at": created_at,
+        "document_type": MEMORY_NOTE_DOCUMENT_TYPE,
+        "section": "weekly_memory_note",
+        "source": "research_weekly_loop_v0",
+    }
+
+
+def upsert_memory_note(
+    *,
+    thread_id: str,
+    memory_note_id: str,
+    artifact_ref: str,
+    text: str,
+    created_at: str,
+    claim_refs: list[str] | None = None,
+    source_refs: list[str] | None = None,
+) -> dict:
+    """Upsert a durable research memory note into Qdrant.
+
+    This is intentionally separate from Scout paper ingestion so weekly memory
+    notes can be searched as user-reviewed research memory, not paper chunks.
+    """
+    chunk_id = memory_note_chunk_id(thread_id=thread_id, memory_note_id=memory_note_id)
+    payload = build_memory_note_payload(
+        thread_id=thread_id,
+        memory_note_id=memory_note_id,
+        artifact_ref=artifact_ref,
+        text=text,
+        created_at=created_at,
+        claim_refs=claim_refs,
+        source_refs=source_refs,
+    )
+    client = _get_client()
+    if not client:
+        return {
+            "status": "unavailable",
+            "collection": QDRANT_COLLECTION,
+            "chunk_id": chunk_id,
+            "point_id": None,
+            "payload": payload,
+            "live_store_mutations": [],
+            "error": "Qdrant client is unavailable",
+        }
+
+    vectors = embed_texts([text])
+    if not vectors:
+        return {
+            "status": "embedding_unavailable",
+            "collection": QDRANT_COLLECTION,
+            "chunk_id": chunk_id,
+            "point_id": None,
+            "payload": payload,
+            "live_store_mutations": [],
+            "error": "Embedding generation returned no vectors",
+        }
+
+    point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, chunk_id))
+    try:
+        _ensure_collection_for_vector(client, len(vectors[0]))
+        client.upsert(
+            collection_name=QDRANT_COLLECTION,
+            points=[
+                PointStruct(
+                    id=point_id,
+                    vector=vectors[0],
+                    payload=payload,
+                )
+            ],
+        )
+    except Exception as exc:
+        return {
+            "status": "failed",
+            "collection": QDRANT_COLLECTION,
+            "chunk_id": chunk_id,
+            "point_id": point_id,
+            "payload": payload,
+            "live_store_mutations": [],
+            "error": str(exc),
+        }
+
+    return {
+        "status": "upserted",
+        "collection": QDRANT_COLLECTION,
+        "chunk_id": chunk_id,
+        "point_id": point_id,
+        "payload": payload,
+        "live_store_mutations": [
+            {
+                "type": "qdrant_upsert",
+                "collection": QDRANT_COLLECTION,
+                "point_id": point_id,
+                "chunk_id": chunk_id,
+            }
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------
