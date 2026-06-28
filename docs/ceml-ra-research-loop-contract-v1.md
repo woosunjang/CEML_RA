@@ -1,7 +1,7 @@
 # CEML_RA Research Loop Contract v1
 
-**Status:** planning contract
-**Date:** 2026-06-12 KST
+**Status:** active loop contract
+**Date:** 2026-06-28 KST
 
 ## Purpose
 
@@ -32,7 +32,10 @@
 
 기억 갱신 원칙:
 
-- 조용히 live store를 변경하지 않는다.
+- preview/dry-run은 live store를 변경하지 않는다.
+- 명시적 `execute=true` weekly loop는 run artifact, memory note,
+  `research_thread` update, Graphiti/Qdrant memory write를 한 run record에
+  남긴다.
 - artifact는 사람이 검토할 수 있는 ground truth로 남긴다.
 - KG/RAG는 artifact를 대체하지 않고, 검색과 추론을 돕는 보조 기억으로 둔다.
 - 사용자에게 보일 Markdown과 설명 문장은 한국어를 기본으로 한다.
@@ -54,11 +57,29 @@
    mode를 분리한다.
 4. Writing 또는 Project 역할이 필요한 경우 artifact draft 또는 next-action plan을
    만든다.
-5. Coordinator가 patch preview와 durable artifact 후보를 묶어 사용자 검토 가능한
-   형태로 남긴다.
+5. Coordinator가 durable weekly brief, reusable memory note, thread update,
+   live memory write 결과를 묶어 다음 루프에서 재사용 가능한 형태로 남긴다.
 
-자동 루프는 live Slack 메시지, KG/RAG ingest, runtime service mutation을 기본으로
-하지 않는다. 그런 동작은 별도 승인 경계다.
+현재 자동화 전 파일럿은 scheduler가 아니라 수동 CLI/API 실행이다. `execute=true`
+weekly loop는 Graphiti/Qdrant memory write를 시도할 수 있지만, Slack 메시지,
+runtime service mutation, scheduler activation은 별도 승인 경계다.
+
+### Weekly Useful Research Loop
+
+첫 파일럿은 `materials_ontology_kg`에 고정한다.
+
+한 번의 weekly loop는 다음을 남긴다.
+
+- 새 근거: Scout, RAG, KG에서 회수한 source signal과 citation;
+- 기존 기억 재사용: `RA_artifacts`, Qdrant, Graphiti 중 어떤 표면에서 이전
+  memory가 회수되었는지;
+- 이번 주 판단 변화: 이전 기억과 새 근거가 연구 판단을 어떻게 바꿨는지;
+- 약한 근거와 보류할 주장: 아직 accepted claim으로 승격하지 않을 내용;
+- 다음 주 핵심 질문과 추천 읽기/확인 대상;
+- reusable memory note와 `research_thread` update.
+
+성공 기준은 “run이 많이 돌았다”가 아니라 두 번째 run이 첫 번째 run의 memory note를
+citation과 함께 재사용하고, 그 재사용이 판단 변화에 반영되는 것이다.
 
 ### On-Demand Research Loop
 
@@ -111,27 +132,30 @@ Subagent 역할 계약:
 - 약한 아이디어와 전진 가능한 아이디어를 구분하는가?
 - 계산, 실험, 제안서 검토 중 하나로 이어지는 next action을 더 선명하게 만드는가?
 - 자동 모드와 요청 기반 모드가 같은 기억을 공유하게 만드는가?
-- live store mutation 없이 preview 또는 durable artifact로 검토 가능한가?
+- live store mutation을 수행한다면 run artifact와 memory note에 어떤 store를 왜
+  바꿨는지 남기는가?
 
 이 질문에 답하지 못하면 dashboard, status surface, executor, Slack command, KG ingest
 preview를 먼저 만들지 않는다.
 
 ## Near-Term Implementation Direction
 
-다음 구현은 새 연구 artifact를 직접 쓰는 일이 아니라, 이 계약을 작은 코드 경계로
-옮기는 일이어야 한다.
+다음 구현 방향은 review/gate/surface 확장이 아니라 Weekly Useful Research Loop의
+연구 품질을 높이는 것이다.
 
 우선순위 후보:
 
-- Coordinator가 한 루프의 입력, 역할 호출, 출력 후보를 기록하는 loop packet;
-- subagent 출력이 `research_thread` patch preview로 돌아오는 공통 envelope;
-- 자동 모드와 요청 기반 모드가 같은 thread context loader를 쓰는 read-only path;
-- artifact update 전 `Evidence Critic` 검토를 강제하는 preview step.
+- `materials_ontology_kg` weekly brief가 새 근거, 기존 기억 재사용, 판단 변화,
+  보류할 주장, 다음 질문, 추천 확인 대상을 안정적으로 생성한다;
+- 두 번째 weekly run이 첫 번째 memory note를 `RA_artifacts`, Qdrant, Graphiti 중
+  하나 이상에서 citation과 함께 재사용한다;
+- M2 runbook과 healthcheck가 실제 경로와 noisy-success 조건을 반영한다;
+- scheduler는 수동 2회 run의 품질이 확인된 뒤에만 연결한다.
 
 아직 하지 않을 것:
 
-- rare-earth/HRE 후속 artifact 직접 작성;
-- Work Package Planner executor 구현;
-- Slack command 확장;
-- runtime service 재시작;
-- Scout DB, Qdrant, Neo4j, Graphiti, KG/RAG live mutation.
+- weekly scheduler 활성화;
+- Slack command/notification 확장;
+- 두 번째 thread 확장;
+- runtime service/launchd/watchdog 등록;
+- 새 review/approval UI 확장.

@@ -115,6 +115,36 @@ class ResearchWeeklyLoopTests(unittest.TestCase):
         self.assertEqual(payload["live_store_mutations"], [])
         self.assertFalse((artifacts / "research_weekly_loops").exists())
 
+    def test_weekly_brief_quality_v1_fields_are_rendered(self):
+        tmp, artifacts = self._seeded_artifacts()
+        self.addCleanup(tmp.cleanup)
+
+        payload = asyncio.run(preview_or_run_weekly_loop(
+            artifacts_dir=artifacts,
+            execute=False,
+            scout_search=_scout_search,
+            rag_search=_rag_search,
+            kg_search=_kg_search,
+            created_at=FIXED_NOW,
+        ))
+
+        brief = payload["brief"]
+        self.assertEqual(brief["quality_version"], "weekly_brief_quality_v1")
+        self.assertIn("judgment_change", brief)
+        self.assertIn("reuse_provenance", brief)
+        self.assertIn("weak_or_deferred_claims", brief)
+        self.assertIn("recommended_checks", brief)
+        self.assertTrue(brief["judgment_change"]["evidence_refs"])
+        self.assertTrue(any(item["reused_from"] == ["Qdrant"] for item in brief["reuse_provenance"]))
+        self.assertTrue(any("Graphiti" in item["reused_from"] for item in brief["reuse_provenance"]))
+        self.assertTrue(any(item["id"] == "deferred.benchmark_superiority" for item in brief["weak_or_deferred_claims"]))
+        self.assertTrue(any(item["kind"] == "read" for item in brief["recommended_checks"]))
+        self.assertIn("## 이번 주 새 근거", payload["preview_markdown"])
+        self.assertIn("## 이번 주 판단 변화", payload["preview_markdown"])
+        self.assertIn("## 약한 근거와 보류할 주장", payload["preview_markdown"])
+        self.assertIn("## 다음 주 핵심 질문", payload["preview_markdown"])
+        self.assertIn("## 추천 읽기/확인 대상", payload["preview_markdown"])
+
     def test_execute_writes_artifacts_updates_thread_and_records_live_mutations(self):
         tmp, artifacts = self._seeded_artifacts()
         self.addCleanup(tmp.cleanup)
@@ -230,6 +260,10 @@ class ResearchWeeklyLoopTests(unittest.TestCase):
 
         previous = second["brief"]["reused_memory"]["previous_memory_notes"]
         self.assertEqual(previous[0]["memory_note_id"], first["memory_note_id"])
+        reuse = second["brief"]["reuse_provenance"][0]
+        self.assertEqual(reuse["memory_note_id"], first["memory_note_id"])
+        self.assertIn("RA_artifacts", reuse["reused_from"])
+        self.assertIn(f"memory_note:{first['memory_note_id']}", second["brief"]["judgment_change"]["memory_refs"])
         self.assertIn(first["memory_note_id"], second["preview_markdown"])
 
     def test_qdrant_memory_note_payload_is_deterministic(self):

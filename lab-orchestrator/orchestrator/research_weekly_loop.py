@@ -415,14 +415,18 @@ def build_memory_note(
 ) -> dict[str, Any]:
     evidence_sources = source_bundle["scout"] + source_bundle["rag"] + source_bundle["kg"]
     citations = build_citations(prior_notes, thread_memory, evidence_sources)
-    top_evidence = evidence_sources[0]["title"] if evidence_sources else "새 외부 근거 없음"
     next_questions = build_next_questions(thread, evidence_sources, prior_notes)
-    claim_id = f"{memory_note_id}.claim.1"
-    claim_text = (
-        f"`{thread['thread_id']}`의 이번 주 루프는 이전 기억 {len(prior_notes)}개와 "
-        f"새 근거 {len(evidence_sources)}개를 연결했다. 다음 검토 초점은 `{next_questions[0]}`이며, "
-        f"가장 앞선 새 근거 신호는 `{top_evidence}`이다."
+    reuse_provenance = build_reuse_provenance(prior_notes, source_bundle)
+    judgment_change = build_judgment_change(
+        thread=thread,
+        evidence_sources=evidence_sources,
+        prior_notes=prior_notes,
+        reuse_provenance=reuse_provenance,
     )
+    weak_or_deferred_claims = build_weak_or_deferred_claims(source_bundle)
+    recommended_checks = build_recommended_checks(thread, source_bundle)
+    claim_id = f"{memory_note_id}.claim.1"
+    claim_text = judgment_change["summary"]
     return {
         "schema_version": SCHEMA_VERSION,
         "builder": BUILDER_NAME,
@@ -435,6 +439,10 @@ def build_memory_note(
         "query": query,
         "artifact_ref": artifact_ref,
         "summary": claim_text,
+        "judgment_change": judgment_change,
+        "reuse_provenance": reuse_provenance,
+        "weak_or_deferred_claims": weak_or_deferred_claims,
+        "recommended_checks": recommended_checks,
         "claims": [
             {
                 "id": claim_id,
@@ -446,6 +454,7 @@ def build_memory_note(
         "citations": citations,
         "reused_memory_count": len(prior_notes) + len(thread_memory),
         "new_evidence_count": len(evidence_sources),
+        "quality_version": "weekly_brief_quality_v1",
         "live_store_mutations": [],
     }
 
@@ -467,6 +476,7 @@ def build_weekly_brief(
     return {
         "schema_version": SCHEMA_VERSION,
         "builder": BUILDER_NAME,
+        "quality_version": "weekly_brief_quality_v1",
         "run_id": run_id,
         "thread_id": thread["thread_id"],
         "topic": thread["topic"],
@@ -483,6 +493,10 @@ def build_weekly_brief(
             "kg": source_bundle["kg"],
             "errors": source_bundle["errors"],
         },
+        "reuse_provenance": memory_note["reuse_provenance"],
+        "judgment_change": memory_note["judgment_change"],
+        "weak_or_deferred_claims": memory_note["weak_or_deferred_claims"],
+        "recommended_checks": memory_note["recommended_checks"],
         "new_memory": memory_note,
         "next_week_questions": memory_note["next_questions"],
         "live_write_results": live_write_results,
@@ -532,11 +546,11 @@ def build_thread_patch(
                 {
                     "id": f"weekly_loop.{run_id}.evidence",
                     "text": (
-                        f"Weekly loop `{run_id}` reused "
+                        f"Weekly loop `{run_id}`는 "
                         f"{len(brief['reused_memory']['previous_memory_notes']) + len(brief['reused_memory']['thread_memory'])} "
-                        f"memory item(s) and collected "
+                        f"개의 기존 기억과 "
                         f"{len(brief['new_evidence']['scout']) + len(brief['new_evidence']['rag']) + len(brief['new_evidence']['kg'])} "
-                        "new evidence signal(s)."
+                        f"개의 새 근거 신호를 연결했다. 판단 변화: {brief['judgment_change']['summary']}"
                     ),
                     "status": "reviewed_signal",
                     "authority_state": "reviewed_artifact",
@@ -544,7 +558,11 @@ def build_thread_patch(
                     "support_state": "artifact_synthesis",
                     "source_refs": source_refs,
                     "artifact_refs": artifact_refs,
-                    "metadata": {"weekly_loop_run_id": run_id},
+                    "metadata": {
+                        "weekly_loop_run_id": run_id,
+                        "reuse_provenance": brief["reuse_provenance"],
+                        "weak_or_deferred_claims": brief["weak_or_deferred_claims"],
+                    },
                 }
             ],
             "decisions": [
@@ -784,13 +802,28 @@ def render_weekly_brief_markdown(brief: dict[str, Any]) -> str:
         f"- Query: `{brief['query']}`",
         f"- 기간: 최근 `{brief['period_days']}`일 기준",
         "",
-        "## 이번 주 판단",
-        "",
-        f"- {brief['new_memory']['summary']}",
-        "",
-        "## 기존 기억 재사용",
+        "## 이번 주 새 근거",
         "",
     ]
+    for label in ("scout", "rag", "kg"):
+        items = brief["new_evidence"][label]
+        lines.append(f"### {label.upper()}")
+        if not items:
+            lines.append("- 새 근거 없음")
+        for item in items:
+            lines.append(f"- `{item['citation']}` **{item['title']}**: {item['text']}")
+        lines.append("")
+
+    lines.extend(["## 기존 기억 재사용", ""])
+    reuse_provenance = brief.get("reuse_provenance", [])
+    if reuse_provenance:
+        for item in reuse_provenance:
+            stores = ", ".join(item.get("reused_from", []))
+            supporting = ", ".join(item.get("supporting_source_refs", []))
+            suffix = f" / 보조 refs: {supporting}" if supporting else ""
+            lines.append(f"- `{item['citation']}` 출처 {stores}: {item.get('used_for', '')}{suffix}")
+    else:
+        lines.append("- 재사용된 weekly memory note 없음")
     previous = brief["reused_memory"]["previous_memory_notes"]
     if previous:
         for note in previous:
@@ -801,22 +834,34 @@ def render_weekly_brief_markdown(brief: dict[str, Any]) -> str:
     for item in thread_memory[:5]:
         lines.append(f"- `{item['citation']}`: {item['text']}")
 
-    lines.extend(["", "## 새 근거", ""])
-    for label in ("scout", "rag", "kg"):
-        items = brief["new_evidence"][label]
-        lines.append(f"### {label.upper()}")
-        if not items:
-            lines.append("- 새 근거 없음")
-        for item in items:
-            lines.append(f"- `{item['citation']}` **{item['title']}**: {item['text']}")
-        lines.append("")
+    judgment = brief["judgment_change"]
+    lines.extend(["", "## 이번 주 판단 변화", ""])
+    lines.append(f"- {judgment['summary']}")
+    lines.append(f"- 판단 변화: {judgment['decision_delta']}")
+    if judgment.get("memory_refs"):
+        lines.append(f"- 사용한 기억: {', '.join(judgment['memory_refs'])}")
+    if judgment.get("evidence_refs"):
+        lines.append(f"- 사용한 새 근거: {', '.join(judgment['evidence_refs'])}")
 
-    lines.extend(["## 새로 기억한 내용", ""])
+    lines.extend(["", "## 약한 근거와 보류할 주장", ""])
+    weak_claims = brief.get("weak_or_deferred_claims", [])
+    if not weak_claims:
+        lines.append("- 보류할 주장이 새로 식별되지 않음")
+    for claim in weak_claims:
+        refs = ", ".join(claim.get("source_refs", []))
+        suffix = f" / refs: {refs}" if refs else ""
+        lines.append(f"- `{claim['id']}` {claim['text']} ({claim['reason']}){suffix}")
+
+    lines.extend(["", "## 다음 주 핵심 질문", ""])
+    lines.extend(f"- {question}" for question in brief["next_week_questions"])
+
+    lines.extend(["", "## 추천 읽기/확인 대상", ""])
+    for check in brief.get("recommended_checks", []):
+        lines.append(f"- `{check['id']}` {check['text']}")
+
+    lines.extend(["", "## 새로 기억한 내용", ""])
     for claim in brief["new_memory"]["claims"]:
         lines.append(f"- `{claim['id']}`: {claim['text']}")
-
-    lines.extend(["", "## 다음 주 질문", ""])
-    lines.extend(f"- {question}" for question in brief["next_week_questions"])
 
     lines.extend(["", "## Live Memory Write", ""])
     for store, result in brief["live_write_results"].items():
@@ -841,18 +886,39 @@ def render_memory_note_markdown(memory_note: dict[str, Any]) -> str:
         f"- 생성 시각: `{memory_note['created_at']}`",
         f"- Query: `{memory_note['query']}`",
         "",
-        "## Summary",
+        "## 요약",
         "",
         memory_note["summary"],
         "",
-        "## Claims",
+        "## 판단 변화",
+        "",
+        f"- {memory_note['judgment_change']['summary']}",
+        f"- 판단 변화: {memory_note['judgment_change']['decision_delta']}",
+        "",
+        "## 기억 재사용 출처",
         "",
     ]
+    if not memory_note.get("reuse_provenance"):
+        lines.append("- 재사용된 weekly memory note 없음")
+    for item in memory_note.get("reuse_provenance", []):
+        stores = ", ".join(item.get("reused_from", []))
+        lines.append(f"- `{item['citation']}` 출처 {stores}: {item.get('used_for', '')}")
+    lines.extend([
+        "",
+        "## 기억할 주장",
+        "",
+    ])
     for claim in memory_note["claims"]:
         lines.append(f"- `{claim['id']}`: {claim['text']}")
-    lines.extend(["", "## Next Questions", ""])
+    lines.extend(["", "## 보류할 주장", ""])
+    for claim in memory_note.get("weak_or_deferred_claims", []):
+        lines.append(f"- `{claim['id']}` {claim['text']} ({claim['reason']})")
+    lines.extend(["", "## 다음 질문", ""])
     lines.extend(f"- {question}" for question in memory_note["next_questions"])
-    lines.extend(["", "## Citations", ""])
+    lines.extend(["", "## 추천 확인 대상", ""])
+    for check in memory_note.get("recommended_checks", []):
+        lines.append(f"- `{check['id']}` {check['text']}")
+    lines.extend(["", "## 인용", ""])
     if not memory_note["citations"]:
         lines.append("- 없음")
     for citation in memory_note["citations"]:
@@ -929,6 +995,221 @@ def build_citations(
             "ref": item.get("url") or item.get("artifact_ref") or item["citation"],
         })
     return citations
+
+
+def build_reuse_provenance(
+    prior_notes: list[dict[str, Any]],
+    source_bundle: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Explain which memory surfaces contributed reusable prior context."""
+    provenance: list[dict[str, Any]] = []
+    consumed_source_refs: set[str] = set()
+    rag_sources = source_bundle.get("rag", []) or []
+    kg_sources = source_bundle.get("kg", []) or []
+    for note in prior_notes:
+        note_id = str(note.get("memory_note_id", "previous_memory_note"))
+        qdrant_refs = [
+            item["citation"]
+            for item in rag_sources
+            if _source_matches_memory_note(item, note) or _looks_like_memory_source(item)
+        ]
+        graphiti_refs = [
+            item["citation"]
+            for item in kg_sources
+            if _source_matches_memory_note(item, note) or _looks_like_memory_source(item)
+        ]
+        reused_from = ["RA_artifacts"]
+        if qdrant_refs:
+            reused_from.append("Qdrant")
+        if graphiti_refs:
+            reused_from.append("Graphiti")
+        consumed_source_refs.update(qdrant_refs)
+        consumed_source_refs.update(graphiti_refs)
+        provenance.append({
+            "memory_note_id": note_id,
+            "citation": f"memory_note:{note_id}",
+            "artifact_ref": str(note.get("artifact_ref", "")),
+            "reused_from": reused_from,
+            "supporting_source_refs": qdrant_refs + graphiti_refs,
+            "used_for": "이번 주 판단 변화의 기준 기억으로 재사용했다.",
+        })
+
+    known_note_refs = {entry["citation"] for entry in provenance}
+    for item in rag_sources:
+        if (
+            _looks_like_memory_source(item)
+            and item["citation"] not in known_note_refs
+            and item["citation"] not in consumed_source_refs
+        ):
+            provenance.append({
+                "memory_note_id": _infer_memory_note_id(item),
+                "citation": item["citation"],
+                "artifact_ref": str(item.get("artifact_ref", "")),
+                "reused_from": ["Qdrant"],
+                "supporting_source_refs": [item["citation"]],
+                "used_for": "Qdrant에서 검색된 이전 memory note 신호를 이번 주 판단의 보조 기억으로 재사용했다.",
+            })
+    for item in kg_sources:
+        if (
+            _looks_like_memory_source(item)
+            and item["citation"] not in known_note_refs
+            and item["citation"] not in consumed_source_refs
+        ):
+            provenance.append({
+                "memory_note_id": _infer_memory_note_id(item),
+                "citation": item["citation"],
+                "artifact_ref": str(item.get("artifact_ref", "")),
+                "reused_from": ["Graphiti"],
+                "supporting_source_refs": [item["citation"]],
+                "used_for": "Graphiti에서 검색된 이전 연구 맥락을 이번 주 판단의 보조 기억으로 재사용했다.",
+            })
+    return provenance
+
+
+def build_judgment_change(
+    *,
+    thread: dict[str, Any],
+    evidence_sources: list[dict[str, Any]],
+    prior_notes: list[dict[str, Any]],
+    reuse_provenance: list[dict[str, Any]],
+) -> dict[str, Any]:
+    memory_refs = [entry["citation"] for entry in reuse_provenance[:5]]
+    evidence_refs = [item["citation"] for item in evidence_sources[:5]]
+    if evidence_sources and prior_notes:
+        summary = (
+            f"이전 weekly memory note {len(prior_notes)}개를 기준 기억으로 삼고, "
+            f"이번 주 새 근거 `{evidence_sources[0]['title']}`를 추가해 "
+            "materials ontology KG의 다음 검토 초점을 provenance 추적과 benchmark 설계로 좁혔다."
+        )
+        decision_delta = "기존 기억을 유지하되, 새 근거가 실제 비교 기준과 provenance 요구사항을 더 명시하도록 만든다."
+    elif evidence_sources:
+        summary = (
+            f"이전 weekly memory note는 없지만 새 근거 `{evidence_sources[0]['title']}`를 바탕으로 "
+            "materials ontology KG의 즉시 검토 대상을 provenance와 retrieval 비교로 설정했다."
+        )
+        decision_delta = "새 근거를 첫 기준점으로 삼고, 다음 run에서 이 판단이 반복 재사용되는지 확인한다."
+    elif prior_notes:
+        summary = (
+            f"새 외부 근거는 없지만 이전 weekly memory note {len(prior_notes)}개를 재사용해 "
+            "열린 질문을 유지하고 다음 수집/비교 조건을 더 좁혔다."
+        )
+        decision_delta = "새 주장을 만들지 않고 기존 memory note의 미해결 질문을 다음 작업 기준으로 유지한다."
+    else:
+        summary = (
+            f"`{thread['thread_id']}`의 기존 research_thread 기억만으로 이번 주 루프를 구성했다. "
+            "새 주장은 보류하고, 다음 run에서 Scout/RAG/KG 근거를 확보하는 것을 우선한다."
+        )
+        decision_delta = "근거 부족으로 판단 확장은 보류한다."
+    return {
+        "summary": summary,
+        "decision_delta": decision_delta,
+        "support_level": "bounded_synthesis",
+        "memory_refs": memory_refs,
+        "evidence_refs": evidence_refs,
+    }
+
+
+def build_weak_or_deferred_claims(source_bundle: dict[str, Any]) -> list[dict[str, Any]]:
+    claims: list[dict[str, Any]] = []
+    evidence_sources = source_bundle.get("scout", []) + source_bundle.get("rag", []) + source_bundle.get("kg", [])
+    if not source_bundle.get("scout"):
+        claims.append({
+            "id": "deferred.scout_missing",
+            "text": "이번 주 Scout 논문 신호가 없거나 제한적이므로 새 문헌 기반 일반화는 보류한다.",
+            "reason": "Scout evidence unavailable or empty",
+            "source_refs": [],
+        })
+    if not source_bundle.get("rag"):
+        claims.append({
+            "id": "deferred.rag_missing",
+            "text": "Qdrant/RAG 검색 근거가 없거나 제한적이므로 기존 memory note 밖의 문헌 비교 주장은 보류한다.",
+            "reason": "RAG evidence unavailable or empty",
+            "source_refs": [],
+        })
+    if not source_bundle.get("kg"):
+        claims.append({
+            "id": "deferred.kg_missing",
+            "text": "Graphiti/KG 재사용 근거가 없거나 제한적이므로 장기 graph memory에 의해 검증된 주장으로 승격하지 않는다.",
+            "reason": "KG evidence unavailable or empty",
+            "source_refs": [],
+        })
+    if evidence_sources:
+        claims.append({
+            "id": "deferred.benchmark_superiority",
+            "text": "새 근거 신호가 있어도 materials ontology KG가 plain RAG보다 우수하다는 결론은 아직 보류한다.",
+            "reason": "비교 benchmark와 반례 검토가 아직 충분하지 않다.",
+            "source_refs": [item["citation"] for item in evidence_sources[:5]],
+        })
+    return claims[:5]
+
+
+def build_recommended_checks(thread: dict[str, Any], source_bundle: dict[str, Any]) -> list[dict[str, Any]]:
+    checks: list[dict[str, Any]] = []
+    for idx, item in enumerate(source_bundle.get("scout", [])[:2], start=1):
+        checks.append({
+            "id": f"check.scout.{idx}",
+            "kind": "read",
+            "text": f"`{item['citation']}` {item['title']}를 먼저 읽고 provenance/benchmark 관련 주장만 추출한다.",
+            "source_ref": item["citation"],
+        })
+    for idx, item in enumerate(source_bundle.get("rag", [])[:2], start=1):
+        checks.append({
+            "id": f"check.rag.{idx}",
+            "kind": "verify_memory",
+            "text": f"`{item['citation']}` RAG 검색 결과가 이전 memory note를 정확히 재사용했는지 원문 artifact와 대조한다.",
+            "source_ref": item["citation"],
+        })
+    for idx, item in enumerate(source_bundle.get("kg", [])[:2], start=1):
+        checks.append({
+            "id": f"check.kg.{idx}",
+            "kind": "verify_graph_context",
+            "text": f"`{item['citation']}` Graphiti fact가 현재 research_thread의 claim/evidence와 충돌하지 않는지 확인한다.",
+            "source_ref": item["citation"],
+        })
+    if not checks:
+        open_actions = [
+            item["text"]
+            for item in thread.get("next_actions", [])
+            if item.get("status") == "open"
+        ]
+        checks.append({
+            "id": "check.thread.next_action",
+            "kind": "thread_followup",
+            "text": open_actions[0] if open_actions else "다음 run 전 materials ontology KG benchmark 질문을 하나로 좁힌다.",
+            "source_ref": f"research_thread:{thread['thread_id']}",
+        })
+    return checks[:5]
+
+
+def _source_matches_memory_note(source: dict[str, Any], note: dict[str, Any]) -> bool:
+    haystack = _source_haystack(source)
+    note_tokens = [
+        str(note.get("memory_note_id", "")),
+        Path(str(note.get("artifact_ref", ""))).name,
+        Path(str(note.get("artifact_ref", ""))).stem,
+    ]
+    return any(token and token.lower() in haystack for token in note_tokens)
+
+
+def _looks_like_memory_source(source: dict[str, Any]) -> bool:
+    haystack = _source_haystack(source)
+    return any(token in haystack for token in ("memory note", "memory_note", "research_memory_notes", "이전", "저장된"))
+
+
+def _infer_memory_note_id(source: dict[str, Any]) -> str:
+    artifact_ref = str(source.get("artifact_ref", ""))
+    if artifact_ref:
+        stem = Path(artifact_ref).stem
+        if stem:
+            return stem
+    return str(source.get("id") or source.get("citation") or "unknown_memory_source")
+
+
+def _source_haystack(source: dict[str, Any]) -> str:
+    return " ".join(
+        str(source.get(key, ""))
+        for key in ("id", "title", "text", "citation", "artifact_ref", "url")
+    ).lower()
 
 
 def build_next_questions(

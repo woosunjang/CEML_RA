@@ -604,3 +604,29 @@ The pre-cleanup source archive remains under the durable artifact root:
 Keep `/Users/woosun/Dropbox/Dev/CEML/RA_artifacts` as the durable artifact
 location. Live DBs, logs, caches, command queues, service state, and local
 `.env` files stay host-local and out of git.
+
+## 2026-06-28 — Weekly Brief Quality v1 direction
+
+**Status:** In progress on `codex/ceml-ra-weekly-useful-loop`.
+
+After M2 live-memory bring-up, the next product step is not another gate,
+review surface, Slack route, or scheduler. The active direction is to make the
+manual `materials_ontology_kg` Weekly Useful Research Loop produce a genuinely
+useful Korean research brief.
+
+Implementation target:
+
+```text
+lab-orchestrator/orchestrator/research_weekly_loop.py
+lab-orchestrator/tests/test_research_weekly_loop.py
+docs/ceml-ra-research-loop-contract-v1.md
+```
+
+The brief must show new evidence, reused memory, judgment change, weak/deferred
+claims, next-week questions, recommended reading/check targets, and reuse
+provenance across `RA_artifacts`, Qdrant, and Graphiti. The acceptance criterion
+is that a second run reuses the first memory note with citation and reflects
+that reuse in the judgment change.
+
+Do not stage the untracked nested `CEML_RA/` directory in the repo root. Treat it
+as a separate cleanup item.

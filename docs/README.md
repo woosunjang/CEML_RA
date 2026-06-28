@@ -93,17 +93,25 @@ Weekly Useful Research Loop:
   `research_memory_notes/{thread_id}/`. The success criterion is not another
   review surface; it is that a later weekly run can reuse an earlier memory
   note with a citation.
+- Weekly Brief Quality v1 fixes the first useful output shape: the Markdown
+  brief must show new evidence, reused memory, judgment change, weak/deferred
+  claims, next-week questions, and recommended reading/check targets. Reuse
+  provenance records whether prior memory came from `RA_artifacts`, Qdrant, or
+  Graphiti.
 - M2 manual bring-up sequence:
 
   ```bash
-  cd /Users/mersoom/Dropbox/Dev/CEML_RA/lab-orchestrator
+  cd /Users/mersoom/Dev/CEML_RA/lab-orchestrator
   docker compose up -d qdrant neo4j
   export CEML_RA_ARTIFACTS_DIR=/Users/mersoom/Dropbox/Dev/CEML/RA_artifacts
-  export SCOUT_DB_PATH=/Users/mersoom/Dropbox/Dev/CEML_RA/lab-paper-scout/data/paper_scout.db
+  export SCOUT_DB_PATH=/Users/mersoom/Dev/CEML_RA/lab-paper-scout/data/paper_scout.db
   python tools/research_memory_healthcheck.py --json --deep
   cd ../lab-paper-scout && python run.py run
   cd ../lab-orchestrator && python tools/research_weekly_loop.py --execute
   ```
+- If Graphiti logs `EquivalentSchemaRuleAlreadyExists` while the final
+  healthcheck JSON is `status: "ok"`, treat it as a noisy successful
+  initialization rather than a failed bring-up.
 
 Patch review workflow:
 

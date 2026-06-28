@@ -1,7 +1,7 @@
 # Handoff
 
-**Updated:** 2026-06-14 KST
-**Current checkout:** `main`
+**Updated:** 2026-06-28 KST
+**Current checkout:** `codex/ceml-ra-weekly-useful-loop`
 
 ## Start Here
 
@@ -33,33 +33,27 @@ clean context before feature work.
 
 ## Open Cleanup TODO
 
-- `Subagent Output Envelope v1` has been fast-forwarded into local `main`, and
-  the merged local `codex/ceml-ra-subagent-output-envelope` branch was removed
-  with normal `git branch -d`. `origin/main` has not been pushed past
-  `0a5b274` because push requires explicit user approval.
-- The prior linear branch stack has been promoted to `main`, pushed to GitHub,
-  and local checkpoint branches were removed with normal `git branch -d`.
-- Codex memory cleanup was requested through the allowed ad-hoc memory update
-  note:
-  `/Users/woosun/.codex/memories/extensions/ad_hoc/notes/20260614191837-ceml-ra-residual-memory-cleanup.md`.
-  It asks the memory layer to remove residual stale CEML_RA references to old
-  2-week/RQF plans, old autonomy/runtime work, rare-earth proposal follow-ons,
-  HRE table suggestions, descriptor table suggestions, Work Package Planner
-  output, and drift-prone commit/branch facts as implied next steps.
-- After the memory layer refreshes, spot-check `memory_summary.md` and
-  `MEMORY.md` for the residual stale anchors above.
+- Repo root currently has an untracked nested `CEML_RA/` directory. Do not stage
+  it. Inspect and remove or ignore it only as a separate cleanup task after the
+  user confirms the intended disposition.
+- Keep M2 code checkout under `/Users/mersoom/Dev/CEML_RA`; do not use the old
+  Dropbox source path as the executable repo path.
 
 ## Current Code Boundary
 
-`Research Loop Packet v1` turns a selected `research_thread`, trigger context,
-candidate subagent roles, expected outputs, stop conditions, artifact
-candidates, and thread patch preview into dry-run-first Markdown/JSON planning
-artifacts.
+`Weekly Useful Research Loop v0` is the current product-facing path. It is
+constrained to `materials_ontology_kg` and can read `research_thread`, Scout,
+RAG, KG, and prior memory notes, then write a weekly brief, reusable memory
+note, `research_thread` update, and Graphiti/Qdrant memory writes when
+`execute=true`.
 
-`Subagent Output Envelope v1` lets a selected loop-packet role return an
-explicitly supplied, Korean-first, reviewable JSON/Markdown envelope plus a
-thread patch preview. It does not execute subagents, call LLMs, create research
-claims, mutate `research_thread`, or touch live stores.
+`Weekly Brief Quality v1` is the current next-step boundary: the brief should
+show new evidence, reused memory, judgment change, weak/deferred claims,
+next-week questions, recommended checks, and reuse provenance across
+`RA_artifacts`, Qdrant, and Graphiti.
+
+Scheduler, Slack notification, second-thread expansion, and new review UI are
+deferred until two useful manual M2 runs are confirmed.
 
 ## Boundaries
 
