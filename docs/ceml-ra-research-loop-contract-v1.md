@@ -78,6 +78,11 @@ runtime service mutation, scheduler activation은 별도 승인 경계다.
 - 다음 주 핵심 질문과 추천 읽기/확인 대상;
 - reusable memory note와 `research_thread` update.
 
+`new_evidence`는 외부 근거 lane이다. Qdrant/Graphiti가 회수한 이전
+`research_memory_note`, weekly memory-note episode, 또는 `memory_note:*` 계열
+source는 새 근거가 아니라 `memory_reuse_sources`에 둔다. Fresh evidence가 없으면
+브리프는 “새 외부 근거 없음, 기존 기억 기반 판단 유지”라고 명시해야 한다.
+
 성공 기준은 “run이 많이 돌았다”가 아니라 두 번째 run이 첫 번째 run의 memory note를
 citation과 함께 재사용하고, 그 재사용이 판단 변화에 반영되는 것이다.
 

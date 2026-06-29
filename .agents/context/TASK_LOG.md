@@ -630,3 +630,24 @@ that reuse in the judgment change.
 
 Do not stage the untracked nested `CEML_RA/` directory in the repo root. Treat it
 as a separate cleanup item.
+
+## 2026-06-29 — Weekly Loop Evidence Separation v1
+
+**Status:** In progress on `codex/ceml-ra-weekly-useful-loop`.
+
+M2 acceptance proved that weekly memory notes are reused across runs and that
+Graphiti/Qdrant writes can complete. The follow-up issue is semantic: Qdrant or
+Graphiti retrieval of previous `research_memory_note` artifacts must not appear
+as "new evidence".
+
+Implementation target:
+
+```text
+lab-orchestrator/orchestrator/research_weekly_loop.py
+lab-orchestrator/tests/test_research_weekly_loop.py
+```
+
+`new_evidence` is reserved for Scout papers, external RAG documents, and fresh
+KG facts. Internal memory hits from Qdrant/Graphiti belong in
+`memory_reuse_sources` and may support `reuse_provenance`, but should not drive
+"이번 주 새 근거" wording.

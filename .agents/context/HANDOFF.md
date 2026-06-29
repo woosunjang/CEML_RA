@@ -52,6 +52,11 @@ show new evidence, reused memory, judgment change, weak/deferred claims,
 next-week questions, recommended checks, and reuse provenance across
 `RA_artifacts`, Qdrant, and Graphiti.
 
+`Weekly Loop Evidence Separation v1` keeps Qdrant/Graphiti
+`research_memory_note` hits out of `new_evidence`. Internal memory hits belong
+in `memory_reuse_sources`; only Scout papers, external RAG documents, and fresh
+KG facts count as new evidence.
+
 Scheduler, Slack notification, second-thread expansion, and new review UI are
 deferred until two useful manual M2 runs are confirmed.
 

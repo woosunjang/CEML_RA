@@ -275,7 +275,7 @@ async def collect_weekly_sources(
     kg_search: KgSearch | None = None,
 ) -> dict[str, Any]:
     errors: list[dict[str, str]] = []
-    scout = normalize_source_items("scout", _safe_collect_sync(
+    raw_scout = normalize_source_items("scout", _safe_collect_sync(
         "scout",
         scout_search or default_scout_search,
         query,
@@ -283,7 +283,7 @@ async def collect_weekly_sources(
         days,
         errors,
     ))
-    rag = normalize_source_items("rag", _safe_collect_sync(
+    raw_rag = normalize_source_items("rag", _safe_collect_sync(
         "rag",
         rag_search or default_rag_search,
         query,
@@ -291,16 +291,28 @@ async def collect_weekly_sources(
         days,
         errors,
     ))
-    kg = normalize_source_items("kg", await _safe_collect_kg(
+    raw_kg = normalize_source_items("kg", await _safe_collect_kg(
         kg_search or default_kg_search,
         query,
         kg_limit,
         errors,
     ))
+    split_sources = split_fresh_evidence_and_memory_sources(
+        scout=raw_scout,
+        rag=raw_rag,
+        kg=raw_kg,
+    )
     return {
-        "scout": scout,
-        "rag": rag,
-        "kg": kg,
+        "scout": split_sources["fresh_evidence"]["scout"],
+        "rag": split_sources["fresh_evidence"]["rag"],
+        "kg": split_sources["fresh_evidence"]["kg"],
+        "memory_reuse_sources": split_sources["memory_reuse_sources"],
+        "raw_sources": {
+            "scout": raw_scout,
+            "rag": raw_rag,
+            "kg": raw_kg,
+        },
+        "scout_retrieval_mode": summarize_scout_retrieval_mode(raw_scout),
         "errors": errors,
     }
 
@@ -312,10 +324,54 @@ def default_scout_search(query: str, limit: int, days: int) -> list[dict[str, An
 
     reader = ScoutReader()
     try:
-        papers = reader.search_papers(query, limit=limit)
+        papers = select_scout_papers_with_fallback(reader, query=query, limit=limit)
     finally:
         reader.close()
     return [source_from_scout_paper(paper, idx) for idx, paper in enumerate(papers, start=1)]
+
+
+def select_scout_papers_with_fallback(reader: Any, *, query: str, limit: int) -> list[dict[str, Any]]:
+    papers = reader.search_papers(query, limit=limit)
+    if papers:
+        for paper in papers:
+            paper.setdefault("retrieval_mode", "exact_phrase")
+            paper.setdefault("retrieval_reason", "Scout title/abstract matched the full weekly query.")
+        return papers[:limit]
+
+    fallback_limit = max(limit * 5, 20)
+    candidates = reader.get_top_papers(min_score=0, limit=fallback_limit)
+    return rank_scout_token_fallback_papers(query=query, papers=candidates, limit=limit)
+
+
+def rank_scout_token_fallback_papers(*, query: str, papers: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    query_tokens = meaningful_query_tokens(query)
+    ranked: list[tuple[int, float, dict[str, Any]]] = []
+    for paper in papers:
+        haystack = " ".join([
+            str(paper.get("title", "")),
+            str(paper.get("summary", "")),
+            str(paper.get("abstract", "")),
+            " ".join(str(tag) for tag in paper.get("tags", []) or []),
+        ])
+        overlap = sorted(query_tokens & meaningful_query_tokens(haystack))
+        if not overlap:
+            continue
+        enriched = dict(paper)
+        enriched["retrieval_mode"] = "token_fallback"
+        enriched["retrieval_reason"] = "Full-query Scout search missed; matched topic token(s): " + ", ".join(overlap)
+        enriched["token_overlap"] = overlap
+        ranked.append((len(overlap), float(enriched.get("relevance_score") or 0), enriched))
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return [paper for _, _, paper in ranked[:limit]]
+
+
+def meaningful_query_tokens(text: str) -> set[str]:
+    stopwords = {"and", "or", "the", "for", "with", "this", "that", "research", "memory"}
+    return {
+        token
+        for token in re.findall(r"[a-zA-Z][a-zA-Z0-9_-]{2,}", text.lower())
+        if token not in stopwords
+    }
 
 
 def default_rag_search(query: str, limit: int, days: int) -> list[dict[str, Any]]:
@@ -356,6 +412,38 @@ def normalize_source_items(label: str, items: list[Any]) -> list[dict[str, Any]]
                 "citation": f"{label}:{idx}",
             })
     return normalized
+
+
+def split_fresh_evidence_and_memory_sources(
+    *,
+    scout: list[dict[str, Any]],
+    rag: list[dict[str, Any]],
+    kg: list[dict[str, Any]],
+) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    memory_rag = [item for item in rag if is_memory_reuse_source(item)]
+    fresh_rag = [item for item in rag if not is_memory_reuse_source(item)]
+    memory_kg = [item for item in kg if is_memory_reuse_source(item)]
+    fresh_kg = [item for item in kg if not is_memory_reuse_source(item)]
+    return {
+        "fresh_evidence": {
+            "scout": scout,
+            "rag": fresh_rag,
+            "kg": fresh_kg,
+        },
+        "memory_reuse_sources": {
+            "rag": memory_rag,
+            "kg": memory_kg,
+        },
+    }
+
+
+def summarize_scout_retrieval_mode(scout: list[dict[str, Any]]) -> str:
+    modes = {str(item.get("retrieval_mode", "")) for item in scout}
+    if "token_fallback" in modes:
+        return "token_fallback"
+    if "exact_phrase" in modes:
+        return "exact_phrase"
+    return "empty" if not scout else "custom"
 
 
 def collect_thread_memory(thread: dict[str, Any], *, limit: int) -> list[dict[str, Any]]:
@@ -441,6 +529,7 @@ def build_memory_note(
         "summary": claim_text,
         "judgment_change": judgment_change,
         "reuse_provenance": reuse_provenance,
+        "memory_reuse_sources": source_bundle.get("memory_reuse_sources", {"rag": [], "kg": []}),
         "weak_or_deferred_claims": weak_or_deferred_claims,
         "recommended_checks": recommended_checks,
         "claims": [
@@ -455,6 +544,7 @@ def build_memory_note(
         "reused_memory_count": len(prior_notes) + len(thread_memory),
         "new_evidence_count": len(evidence_sources),
         "quality_version": "weekly_brief_quality_v1",
+        "evidence_separation_version": "weekly_loop_evidence_separation_v1",
         "live_store_mutations": [],
     }
 
@@ -477,6 +567,7 @@ def build_weekly_brief(
         "schema_version": SCHEMA_VERSION,
         "builder": BUILDER_NAME,
         "quality_version": "weekly_brief_quality_v1",
+        "evidence_separation_version": "weekly_loop_evidence_separation_v1",
         "run_id": run_id,
         "thread_id": thread["thread_id"],
         "topic": thread["topic"],
@@ -487,6 +578,7 @@ def build_weekly_brief(
             "previous_memory_notes": compact_previous_notes(prior_notes),
             "thread_memory": thread_memory,
         },
+        "memory_reuse_sources": memory_note["memory_reuse_sources"],
         "new_evidence": {
             "scout": source_bundle["scout"],
             "rag": source_bundle["rag"],
@@ -630,22 +722,40 @@ def build_source_availability(
     preflight_report: dict[str, Any],
 ) -> dict[str, Any]:
     checks = preflight_report.get("checks", {}) or {}
+    raw_sources = source_bundle.get("raw_sources", {}) or {}
+    memory_sources = source_bundle.get("memory_reuse_sources", {}) or {}
+    fresh_evidence_count = (
+        len(source_bundle.get("scout", []))
+        + len(source_bundle.get("rag", []))
+        + len(source_bundle.get("kg", []))
+    )
+    memory_reuse_count = len(memory_sources.get("rag", [])) + len(memory_sources.get("kg", []))
     return {
         "scout": _source_status(
-            count=len(source_bundle.get("scout", [])),
+            count=len(raw_sources.get("scout", source_bundle.get("scout", []))),
+            fresh_count=len(source_bundle.get("scout", [])),
+            memory_reuse_count=0,
             check=checks.get("scout", {}),
             errors=[e for e in source_bundle.get("errors", []) if e.get("source") == "scout"],
         ),
         "rag": _source_status(
-            count=len(source_bundle.get("rag", [])),
+            count=len(raw_sources.get("rag", source_bundle.get("rag", []))),
+            fresh_count=len(source_bundle.get("rag", [])),
+            memory_reuse_count=len(memory_sources.get("rag", [])),
             check=checks.get("qdrant", {}),
             errors=[e for e in source_bundle.get("errors", []) if e.get("source") == "rag"],
         ),
         "kg": _source_status(
-            count=len(source_bundle.get("kg", [])),
+            count=len(raw_sources.get("kg", source_bundle.get("kg", []))),
+            fresh_count=len(source_bundle.get("kg", [])),
+            memory_reuse_count=len(memory_sources.get("kg", [])),
             check=checks.get("graphiti", {}),
             errors=[e for e in source_bundle.get("errors", []) if e.get("source") == "kg"],
         ),
+        "fresh_evidence_count": fresh_evidence_count,
+        "memory_reuse_count": memory_reuse_count,
+        "scout_retrieval_mode": source_bundle.get("scout_retrieval_mode", "unknown"),
+        "fresh_evidence_missing_reason": fresh_evidence_missing_reason(source_bundle),
         "qdrant_write": {
             "status": live_write_results.get("qdrant", {}).get("status"),
             "error": live_write_results.get("qdrant", {}).get("error"),
@@ -657,14 +767,35 @@ def build_source_availability(
     }
 
 
-def _source_status(*, count: int, check: dict[str, Any], errors: list[dict[str, str]]) -> dict[str, Any]:
+def _source_status(
+    *,
+    count: int,
+    fresh_count: int,
+    memory_reuse_count: int,
+    check: dict[str, Any],
+    errors: list[dict[str, str]],
+) -> dict[str, Any]:
     return {
         "available": count > 0,
         "count": count,
+        "fresh_count": fresh_count,
+        "memory_reuse_count": memory_reuse_count,
         "preflight_ok": bool(check.get("ok")),
         "preflight_error": check.get("error"),
         "errors": errors,
     }
+
+
+def fresh_evidence_missing_reason(source_bundle: dict[str, Any]) -> str:
+    if source_bundle.get("scout") or source_bundle.get("rag") or source_bundle.get("kg"):
+        return ""
+    memory_sources = source_bundle.get("memory_reuse_sources", {}) or {}
+    memory_count = len(memory_sources.get("rag", [])) + len(memory_sources.get("kg", []))
+    if memory_count:
+        return "retrieval_found_only_internal_memory_notes"
+    if source_bundle.get("errors"):
+        return "source_collection_errors"
+    return "no_fresh_external_sources_found"
 
 
 async def write_live_memory(
@@ -833,6 +964,12 @@ def render_weekly_brief_markdown(brief: dict[str, Any]) -> str:
     thread_memory = brief["reused_memory"]["thread_memory"]
     for item in thread_memory[:5]:
         lines.append(f"- `{item['citation']}`: {item['text']}")
+    memory_reuse_sources = brief.get("memory_reuse_sources", {}) or {}
+    if memory_reuse_sources.get("rag") or memory_reuse_sources.get("kg"):
+        lines.extend(["", "### Qdrant/Graphiti에서 회수된 내부 기억", ""])
+        for label in ("rag", "kg"):
+            for item in memory_reuse_sources.get(label, []):
+                lines.append(f"- `{item['citation']}` **{item['title']}**: {item['text']}")
 
     judgment = brief["judgment_change"]
     lines.extend(["", "## 이번 주 판단 변화", ""])
@@ -903,6 +1040,12 @@ def render_memory_note_markdown(memory_note: dict[str, Any]) -> str:
     for item in memory_note.get("reuse_provenance", []):
         stores = ", ".join(item.get("reused_from", []))
         lines.append(f"- `{item['citation']}` 출처 {stores}: {item.get('used_for', '')}")
+    memory_reuse_sources = memory_note.get("memory_reuse_sources", {}) or {}
+    if memory_reuse_sources.get("rag") or memory_reuse_sources.get("kg"):
+        lines.extend(["", "### 검색으로 회수된 내부 기억", ""])
+        for label in ("rag", "kg"):
+            for item in memory_reuse_sources.get(label, []):
+                lines.append(f"- `{item['citation']}` {item['title']}")
     lines.extend([
         "",
         "## 기억할 주장",
@@ -938,6 +1081,9 @@ def source_from_scout_paper(paper: dict[str, Any], idx: int) -> dict[str, Any]:
         "citation": f"scout:{paper_id}",
         "url": str(paper.get("url") or ""),
         "score": paper.get("relevance_score"),
+        "retrieval_mode": paper.get("retrieval_mode", "custom"),
+        "retrieval_reason": paper.get("retrieval_reason", ""),
+        "token_overlap": list(paper.get("token_overlap", []) or []),
     }
 
 
@@ -954,19 +1100,26 @@ def source_from_rag_result(result: Any, idx: int) -> dict[str, Any]:
         "citation": f"rag:{chunk_id}",
         "score": getattr(result, "score", None),
         "artifact_ref": str(payload.get("artifact_ref") or ""),
+        "document_type": str(payload.get("document_type") or ""),
+        "memory_note_id": str(payload.get("memory_note_id") or ""),
+        "payload_source": str(payload.get("source") or ""),
     }
 
 
 def source_from_kg_result(result: dict[str, Any], idx: int) -> dict[str, Any]:
     uuid = str(result.get("uuid") or f"kg_{idx}")
-    fact = str(result.get("fact") or "")
+    fact = str(result.get("fact") or result.get("text") or result.get("summary") or "")
+    title = str(result.get("title") or result.get("name") or f"Graphiti fact {idx}")
     return {
         "source": "kg",
         "id": uuid,
-        "title": f"Graphiti fact {idx}",
+        "title": title,
         "text": fact or "KG fact text 없음",
         "citation": f"kg:{uuid}",
         "score": result.get("score"),
+        "artifact_ref": str(result.get("artifact_ref") or ""),
+        "document_type": str(result.get("document_type") or ""),
+        "episode_name": str(result.get("episode_name") or result.get("name") or ""),
     }
 
 
@@ -1004,19 +1157,20 @@ def build_reuse_provenance(
     """Explain which memory surfaces contributed reusable prior context."""
     provenance: list[dict[str, Any]] = []
     consumed_source_refs: set[str] = set()
-    rag_sources = source_bundle.get("rag", []) or []
-    kg_sources = source_bundle.get("kg", []) or []
+    memory_sources = source_bundle.get("memory_reuse_sources", {}) or {}
+    rag_sources = memory_sources.get("rag", []) or []
+    kg_sources = memory_sources.get("kg", []) or []
     for note in prior_notes:
         note_id = str(note.get("memory_note_id", "previous_memory_note"))
         qdrant_refs = [
             item["citation"]
             for item in rag_sources
-            if _source_matches_memory_note(item, note) or _looks_like_memory_source(item)
+            if _source_matches_memory_note(item, note)
         ]
         graphiti_refs = [
             item["citation"]
             for item in kg_sources
-            if _source_matches_memory_note(item, note) or _looks_like_memory_source(item)
+            if _source_matches_memory_note(item, note)
         ]
         reused_from = ["RA_artifacts"]
         if qdrant_refs:
@@ -1037,8 +1191,7 @@ def build_reuse_provenance(
     known_note_refs = {entry["citation"] for entry in provenance}
     for item in rag_sources:
         if (
-            _looks_like_memory_source(item)
-            and item["citation"] not in known_note_refs
+            item["citation"] not in known_note_refs
             and item["citation"] not in consumed_source_refs
         ):
             provenance.append({
@@ -1051,8 +1204,7 @@ def build_reuse_provenance(
             })
     for item in kg_sources:
         if (
-            _looks_like_memory_source(item)
-            and item["citation"] not in known_note_refs
+            item["citation"] not in known_note_refs
             and item["citation"] not in consumed_source_refs
         ):
             provenance.append({
@@ -1129,7 +1281,7 @@ def build_weak_or_deferred_claims(source_bundle: dict[str, Any]) -> list[dict[st
     if not source_bundle.get("kg"):
         claims.append({
             "id": "deferred.kg_missing",
-            "text": "Graphiti/KG 재사용 근거가 없거나 제한적이므로 장기 graph memory에 의해 검증된 주장으로 승격하지 않는다.",
+            "text": "Fresh KG fact가 없거나 제한적이므로 장기 graph memory에 의해 검증된 새 주장으로 승격하지 않는다.",
             "reason": "KG evidence unavailable or empty",
             "source_refs": [],
         })
@@ -1155,8 +1307,8 @@ def build_recommended_checks(thread: dict[str, Any], source_bundle: dict[str, An
     for idx, item in enumerate(source_bundle.get("rag", [])[:2], start=1):
         checks.append({
             "id": f"check.rag.{idx}",
-            "kind": "verify_memory",
-            "text": f"`{item['citation']}` RAG 검색 결과가 이전 memory note를 정확히 재사용했는지 원문 artifact와 대조한다.",
+            "kind": "verify_external_rag",
+            "text": f"`{item['citation']}` RAG 검색 결과가 외부 근거인지, 기존 memory note의 재검색이 아닌지 원문과 대조한다.",
             "source_ref": item["citation"],
         })
     for idx, item in enumerate(source_bundle.get("kg", [])[:2], start=1):
@@ -1164,6 +1316,21 @@ def build_recommended_checks(thread: dict[str, Any], source_bundle: dict[str, An
             "id": f"check.kg.{idx}",
             "kind": "verify_graph_context",
             "text": f"`{item['citation']}` Graphiti fact가 현재 research_thread의 claim/evidence와 충돌하지 않는지 확인한다.",
+            "source_ref": item["citation"],
+        })
+    memory_sources = source_bundle.get("memory_reuse_sources", {}) or {}
+    for idx, item in enumerate(memory_sources.get("rag", [])[:2], start=1):
+        checks.append({
+            "id": f"check.memory_rag.{idx}",
+            "kind": "verify_memory",
+            "text": f"`{item['citation']}` 내부 memory note 검색 결과가 원문 artifact와 일치하는지 확인한다.",
+            "source_ref": item["citation"],
+        })
+    for idx, item in enumerate(memory_sources.get("kg", [])[:2], start=1):
+        checks.append({
+            "id": f"check.memory_kg.{idx}",
+            "kind": "verify_graph_memory",
+            "text": f"`{item['citation']}` Graphiti에서 회수된 내부 기억이 현재 판단에 과잉 반영되지 않았는지 확인한다.",
             "source_ref": item["citation"],
         })
     if not checks:
@@ -1191,9 +1358,31 @@ def _source_matches_memory_note(source: dict[str, Any], note: dict[str, Any]) ->
     return any(token and token.lower() in haystack for token in note_tokens)
 
 
-def _looks_like_memory_source(source: dict[str, Any]) -> bool:
+def is_memory_reuse_source(source: dict[str, Any]) -> bool:
+    if str(source.get("document_type", "")) == "research_memory_note":
+        return True
+    if str(source.get("memory_note_id", "")):
+        return True
+    citation = str(source.get("citation", ""))
+    if citation.startswith("memory_note:") or citation.startswith("rag:research_memory_note:"):
+        return True
     haystack = _source_haystack(source)
-    return any(token in haystack for token in ("memory note", "memory_note", "research_memory_notes", "이전", "저장된"))
+    memory_markers = (
+        "research_memory_note",
+        "research memory note",
+        "weekly research memory note",
+        "weekly memory note",
+        "research_memory_notes",
+        "memory_note_",
+        "memory note:",
+        "# research memory note",
+        "weekly_loop.",
+    )
+    return any(marker in haystack for marker in memory_markers)
+
+
+def _looks_like_memory_source(source: dict[str, Any]) -> bool:
+    return is_memory_reuse_source(source)
 
 
 def _infer_memory_note_id(source: dict[str, Any]) -> str:
@@ -1208,7 +1397,18 @@ def _infer_memory_note_id(source: dict[str, Any]) -> str:
 def _source_haystack(source: dict[str, Any]) -> str:
     return " ".join(
         str(source.get(key, ""))
-        for key in ("id", "title", "text", "citation", "artifact_ref", "url")
+        for key in (
+            "id",
+            "title",
+            "text",
+            "citation",
+            "artifact_ref",
+            "url",
+            "document_type",
+            "memory_note_id",
+            "payload_source",
+            "episode_name",
+        )
     ).lower()
 
 

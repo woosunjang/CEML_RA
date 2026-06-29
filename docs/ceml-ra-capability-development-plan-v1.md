@@ -41,6 +41,13 @@ expansion. The brief now has explicit sections for new evidence, reused memory,
 judgment change, weak/deferred claims, next-week questions, recommended checks,
 and reuse provenance across `RA_artifacts`, Qdrant, and Graphiti.
 
+**Implementation note:** Weekly Loop Evidence Separation v1 prevents internal
+memory echo from being presented as fresh evidence. `research_memory_note`
+results from Qdrant/Graphiti are kept in `memory_reuse_sources`, while
+`new_evidence` is reserved for Scout papers, external RAG documents, and fresh
+KG facts. Scout search also falls back from full-query phrase search to
+token-overlap ranking across analyzed papers.
+
 ## Purpose
 
 이 문서는 CEML_RA의 다음 개발 방향을 repo-local truth로 저장한다. 기능 구현은
@@ -74,6 +81,7 @@ PhD-level integrated research colleague가 되는 것이다. 자동 모드와 �
 - Subagent Output Envelope v1
 - Weekly Useful Research Loop v0
 - Weekly Brief Quality v1
+- Weekly Loop Evidence Separation v1
 - M2 live memory healthcheck and bring-up runbook
 
 이 기능들은 연구 기억 spine과 dry-run-first 경계를 만들었지만, 아직 통합 연구

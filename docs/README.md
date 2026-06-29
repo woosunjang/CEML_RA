@@ -98,6 +98,15 @@ Weekly Useful Research Loop:
   claims, next-week questions, and recommended reading/check targets. Reuse
   provenance records whether prior memory came from `RA_artifacts`, Qdrant, or
   Graphiti.
+- Weekly Loop Evidence Separation v1 keeps internal memory echo out of the
+  "new evidence" lane. Qdrant/Graphiti hits for `research_memory_note` or
+  weekly memory-note episodes are reported under `memory_reuse_sources`; only
+  Scout papers, external RAG documents, and fresh KG facts appear under
+  `new_evidence`.
+- `source_availability` reports raw source counts plus `fresh_evidence_count`,
+  `memory_reuse_count`, `scout_retrieval_mode`, and
+  `fresh_evidence_missing_reason`. If Scout exact query search misses, the
+  weekly loop falls back to token-overlap ranking across analyzed Scout papers.
 - M2 manual bring-up sequence:
 
   ```bash

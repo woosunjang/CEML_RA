@@ -20,7 +20,7 @@ import orchestrator.research_thread as research_thread  # noqa: E402
 from api.server import app  # noqa: E402
 from integrations.qdrant import build_memory_note_payload, memory_note_chunk_id  # noqa: E402
 from orchestrator.research_thread import load_research_thread, seed_research_threads  # noqa: E402
-from orchestrator.research_weekly_loop import preview_or_run_weekly_loop  # noqa: E402
+from orchestrator.research_weekly_loop import preview_or_run_weekly_loop, select_scout_papers_with_fallback  # noqa: E402
 
 
 FIXED_NOW = "2026-06-28T09:00:00Z"
@@ -29,10 +29,12 @@ FIXED_NOW = "2026-06-28T09:00:00Z"
 class _RagResult:
     score = 0.42
     payload = {
-        "chunk_id": "prior_memory_chunk",
-        "title": "Prior memory note",
+        "chunk_id": "research_memory_note:materials_ontology_kg:prior_memory_chunk",
+        "title": "Weekly research memory note: materials_ontology_kg",
         "text": "이전 materials ontology KG memory note가 RAG에서 검색되었다.",
         "artifact_ref": "research_memory_notes/materials_ontology_kg/prior.md",
+        "document_type": "research_memory_note",
+        "memory_note_id": "prior_memory_chunk",
     }
 
 
@@ -53,7 +55,36 @@ def _rag_search(query: str, limit: int, days: int) -> list[_RagResult]:
 
 
 async def _kg_search(query: str, limit: int) -> list[dict]:
-    return [{"uuid": "kg-1", "fact": "Graphiti에 저장된 이전 KG/RAG benchmark 논의가 있다.", "score": 0.7}][:limit]
+    return [{"uuid": "kg-1", "fact": "materials ontology KG에는 provenance-bearing claim edge가 필요하다.", "score": 0.7}][:limit]
+
+
+async def _kg_memory_search(query: str, limit: int) -> list[dict]:
+    return [
+        {
+            "uuid": "kg-memory-1",
+            "title": "Weekly research memory note: materials_ontology_kg",
+            "fact": "Graphiti에서 이전 weekly memory note가 검색되었다.",
+            "document_type": "research_memory_note",
+            "score": 0.7,
+        }
+    ][:limit]
+
+
+class _FakeScoutReader:
+    def search_papers(self, query: str, limit: int) -> list[dict]:
+        return []
+
+    def get_top_papers(self, min_score: int, limit: int) -> list[dict]:
+        return [
+            {
+                "id": "paper-fallback",
+                "title": "Ontology-guided materials knowledge graph with provenance",
+                "summary": "A materials ontology graph records provenance for scientific claims.",
+                "relevance_score": 83,
+                "status": "analyzed",
+                "tags": ["materials", "ontology", "provenance"],
+            }
+        ]
 
 
 async def _graphiti_success(conversation_id: str, user_message: str, assistant_message: str, agent_name: str):
@@ -124,17 +155,23 @@ class ResearchWeeklyLoopTests(unittest.TestCase):
             execute=False,
             scout_search=_scout_search,
             rag_search=_rag_search,
-            kg_search=_kg_search,
+            kg_search=_kg_memory_search,
             created_at=FIXED_NOW,
         ))
 
         brief = payload["brief"]
         self.assertEqual(brief["quality_version"], "weekly_brief_quality_v1")
+        self.assertEqual(brief["evidence_separation_version"], "weekly_loop_evidence_separation_v1")
         self.assertIn("judgment_change", brief)
         self.assertIn("reuse_provenance", brief)
+        self.assertIn("memory_reuse_sources", brief)
         self.assertIn("weak_or_deferred_claims", brief)
         self.assertIn("recommended_checks", brief)
         self.assertTrue(brief["judgment_change"]["evidence_refs"])
+        self.assertEqual(brief["new_evidence"]["rag"], [])
+        self.assertEqual(brief["new_evidence"]["kg"], [])
+        self.assertTrue(brief["memory_reuse_sources"]["rag"])
+        self.assertTrue(brief["memory_reuse_sources"]["kg"])
         self.assertTrue(any(item["reused_from"] == ["Qdrant"] for item in brief["reuse_provenance"]))
         self.assertTrue(any("Graphiti" in item["reused_from"] for item in brief["reuse_provenance"]))
         self.assertTrue(any(item["id"] == "deferred.benchmark_superiority" for item in brief["weak_or_deferred_claims"]))
@@ -164,7 +201,10 @@ class ResearchWeeklyLoopTests(unittest.TestCase):
         self.assertEqual(payload["live_write_results"]["graphiti"]["status"], "ingested")
         self.assertEqual(payload["source_availability"]["scout"]["count"], 1)
         self.assertEqual(payload["source_availability"]["rag"]["count"], 1)
+        self.assertEqual(payload["source_availability"]["rag"]["fresh_count"], 0)
+        self.assertEqual(payload["source_availability"]["rag"]["memory_reuse_count"], 1)
         self.assertEqual(payload["source_availability"]["kg"]["count"], 1)
+        self.assertEqual(payload["source_availability"]["fresh_evidence_count"], 2)
         self.assertTrue(Path(payload["run_json_path"]).exists())
         self.assertTrue(Path(payload["run_markdown_path"]).exists())
         self.assertTrue(Path(payload["memory_json_path"]).exists())
@@ -265,6 +305,63 @@ class ResearchWeeklyLoopTests(unittest.TestCase):
         self.assertIn("RA_artifacts", reuse["reused_from"])
         self.assertIn(f"memory_note:{first['memory_note_id']}", second["brief"]["judgment_change"]["memory_refs"])
         self.assertIn(first["memory_note_id"], second["preview_markdown"])
+
+    def test_memory_note_retrieval_is_not_counted_as_new_evidence(self):
+        tmp, artifacts = self._seeded_artifacts()
+        self.addCleanup(tmp.cleanup)
+
+        first = asyncio.run(preview_or_run_weekly_loop(
+            artifacts_dir=artifacts,
+            execute=True,
+            use_live_memory=False,
+            scout_search=lambda query, limit, days: [],
+            rag_search=lambda query, limit, days: [],
+            kg_search=lambda query, limit: _kg_search(query, 0),
+            created_at="2026-06-21T09:00:00Z",
+        ))
+        second = asyncio.run(preview_or_run_weekly_loop(
+            artifacts_dir=artifacts,
+            execute=True,
+            use_live_memory=False,
+            scout_search=lambda query, limit, days: [],
+            rag_search=_rag_search,
+            kg_search=_kg_memory_search,
+            created_at="2026-06-28T09:00:00Z",
+        ))
+
+        brief = second["brief"]
+        self.assertEqual(brief["new_evidence"]["scout"], [])
+        self.assertEqual(brief["new_evidence"]["rag"], [])
+        self.assertEqual(brief["new_evidence"]["kg"], [])
+        self.assertTrue(brief["memory_reuse_sources"]["rag"])
+        self.assertTrue(brief["memory_reuse_sources"]["kg"])
+        self.assertIn(f"memory_note:{first['memory_note_id']}", brief["judgment_change"]["memory_refs"])
+        self.assertIn("새 외부 근거는 없지만", brief["judgment_change"]["summary"])
+        self.assertEqual(second["memory_note"]["new_evidence_count"], 0)
+        self.assertEqual(second["source_availability"]["fresh_evidence_count"], 0)
+        self.assertEqual(second["source_availability"]["memory_reuse_count"], 2)
+        self.assertEqual(
+            second["source_availability"]["fresh_evidence_missing_reason"],
+            "retrieval_found_only_internal_memory_notes",
+        )
+        self.assertNotIn("Weekly research memory note", " ".join(
+            item["title"]
+            for items in brief["new_evidence"].values()
+            if isinstance(items, list)
+            for item in items
+        ))
+
+    def test_scout_fallback_uses_token_overlap_after_full_query_miss(self):
+        selected = select_scout_papers_with_fallback(
+            _FakeScoutReader(),
+            query="materials ontology knowledge graph provenance RAG research memory",
+            limit=1,
+        )
+
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0]["id"], "paper-fallback")
+        self.assertEqual(selected[0]["retrieval_mode"], "token_fallback")
+        self.assertIn("ontology", selected[0]["token_overlap"])
 
     def test_qdrant_memory_note_payload_is_deterministic(self):
         payload = build_memory_note_payload(
