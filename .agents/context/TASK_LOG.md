@@ -2,7 +2,7 @@
 
 ## 2026-07-01 — Implemented feature-first question loop expansion
 
-**Status:** Local regression passed; M2 acceptance pending after branch push/pull.
+**Status:** Complete on `codex/ceml-ra-weekly-useful-loop`.
 
 Added the feature-first expansion target on top of the weekly useful loop:
 
@@ -22,6 +22,17 @@ LLM synthesis is default; model failure or `use_llm=false` records
 Weekly loop v0 now supports both `materials_ontology_kg` and
 `rare_earth_magnets` through thread-specific default queries. Scheduler, Slack,
 runtime service registration, and new review UI remain out of scope.
+
+Verification completed:
+
+- local focused/regression tests passed for question loop, weekly loop,
+  research thread/API/context/loop packet/subagent envelope/work-package planner;
+- M2 healthcheck passed for both `materials_ontology_kg` and
+  `rare_earth_magnets`;
+- M2 executed two live question-loop runs for each thread;
+- second runs reused the first run's memory note by citation;
+- Graphiti/Qdrant live write results were `ingested` / `upserted`;
+- cross-thread memory note contamination was fixed and checked.
 
 Do not stage the repo-root untracked `CEML_RA/` directory.
 

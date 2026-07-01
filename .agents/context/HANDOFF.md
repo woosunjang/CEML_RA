@@ -66,8 +66,8 @@ Korean artifacts with `synthesis_mode: fallback`.
 
 Scheduler, Slack notification, runtime service registration, and new review UI
 remain deferred. Do not drift back into selection/summarization-only polish
-until the two-thread question -> answer -> work package -> memory reuse path is
-accepted on M2.
+because the two-thread question -> answer -> work package -> memory reuse path
+has been accepted on M2 with live Graphiti/Qdrant writes.
 
 ## Boundaries
 
