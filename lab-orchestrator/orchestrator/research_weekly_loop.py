@@ -29,6 +29,10 @@ DEFAULT_THREAD_ID = "materials_ontology_kg"
 WEEKLY_LOOPS_DIR = "research_weekly_loops"
 MEMORY_NOTES_DIR = "research_memory_notes"
 DEFAULT_QUERY = "materials ontology knowledge graph provenance RAG research memory"
+THREAD_DEFAULT_QUERIES = {
+    "materials_ontology_kg": DEFAULT_QUERY,
+    "rare_earth_magnets": "rare earth magnets heavy rare earth reduction coercivity grain boundary diffusion recycling digital twin",
+}
 
 SourceSearch = Callable[[str, int, int], list[dict[str, Any]]]
 KgSearch = Callable[[str, int], Awaitable[list[dict[str, Any]]]]
@@ -95,18 +99,19 @@ async def preview_or_run_weekly_loop(
 ) -> dict[str, Any]:
     """Run or preview the v0 weekly loop.
 
-    v0 is intentionally constrained to materials_ontology_kg. Later phases can
-    promote the same contract to multiple threads.
+    v0 began with materials_ontology_kg and now supports the first two seeded
+    research threads through thread-specific default queries.
     """
-    if thread_id != DEFAULT_THREAD_ID:
-        raise ValueError(f"Weekly Useful Research Loop v0 supports only {DEFAULT_THREAD_ID}")
+    if thread_id not in THREAD_DEFAULT_QUERIES:
+        supported = ", ".join(sorted(THREAD_DEFAULT_QUERIES))
+        raise ValueError(f"Weekly Useful Research Loop v0 supports only: {supported}")
     if days < 1 or days > 31:
         raise ValueError("days must be between 1 and 31")
     if scout_limit < 0 or rag_limit < 0 or kg_limit < 0:
         raise ValueError("source limits must be non-negative")
 
     created_at = created_at or utc_now()
-    query = (query or DEFAULT_QUERY).strip()
+    query = (query or default_query_for_thread(thread_id)).strip()
     if not query:
         raise ValueError("query must be a non-empty string")
 
@@ -806,12 +811,16 @@ async def write_live_memory(
     memory_artifact_ref: str,
     graphiti_ingest: GraphitiIngest | None = None,
     qdrant_upsert: QdrantUpsert | None = None,
+    graphiti_agent_name: str = BUILDER_NAME,
+    graphiti_user_message: str | None = None,
 ) -> dict[str, Any]:
     graphiti_result = await _write_graphiti_memory(
         thread_id=thread_id,
         memory_note=memory_note,
         memory_markdown=memory_markdown,
         graphiti_ingest=graphiti_ingest,
+        graphiti_agent_name=graphiti_agent_name,
+        graphiti_user_message=graphiti_user_message,
     )
     qdrant_result = _write_qdrant_memory(
         thread_id=thread_id,
@@ -829,6 +838,8 @@ async def _write_graphiti_memory(
     memory_note: dict[str, Any],
     memory_markdown: str,
     graphiti_ingest: GraphitiIngest | None = None,
+    graphiti_agent_name: str = BUILDER_NAME,
+    graphiti_user_message: str | None = None,
 ) -> dict[str, Any]:
     try:
         if graphiti_ingest is None:
@@ -841,9 +852,9 @@ async def _write_graphiti_memory(
 
         result = await graphiti_ingest(
             memory_note["memory_note_id"],
-            f"Accumulate weekly research memory for {thread_id}.",
+            graphiti_user_message or f"Accumulate research memory for {thread_id}.",
             memory_markdown,
-            BUILDER_NAME,
+            graphiti_agent_name,
         )
         if isinstance(result, dict):
             return result
@@ -1227,17 +1238,18 @@ def build_judgment_change(
 ) -> dict[str, Any]:
     memory_refs = [entry["citation"] for entry in reuse_provenance[:5]]
     evidence_refs = [item["citation"] for item in evidence_sources[:5]]
+    focus = thread_focus_label(thread)
     if evidence_sources and prior_notes:
         summary = (
             f"이전 weekly memory note {len(prior_notes)}개를 기준 기억으로 삼고, "
             f"이번 주 새 근거 `{evidence_sources[0]['title']}`를 추가해 "
-            "materials ontology KG의 다음 검토 초점을 provenance 추적과 benchmark 설계로 좁혔다."
+            f"{focus}의 다음 검토 초점을 근거 비교와 실행 가능한 검증 질문으로 좁혔다."
         )
-        decision_delta = "기존 기억을 유지하되, 새 근거가 실제 비교 기준과 provenance 요구사항을 더 명시하도록 만든다."
+        decision_delta = "기존 기억을 유지하되, 새 근거가 실제 비교 기준과 검증 요구사항을 더 명시하도록 만든다."
     elif evidence_sources:
         summary = (
             f"이전 weekly memory note는 없지만 새 근거 `{evidence_sources[0]['title']}`를 바탕으로 "
-            "materials ontology KG의 즉시 검토 대상을 provenance와 retrieval 비교로 설정했다."
+            f"{focus}의 즉시 검토 대상을 근거 비교와 다음 실행 질문으로 설정했다."
         )
         decision_delta = "새 근거를 첫 기준점으로 삼고, 다음 run에서 이 판단이 반복 재사용되는지 확인한다."
     elif prior_notes:
@@ -1288,7 +1300,7 @@ def build_weak_or_deferred_claims(source_bundle: dict[str, Any]) -> list[dict[st
     if evidence_sources:
         claims.append({
             "id": "deferred.benchmark_superiority",
-            "text": "새 근거 신호가 있어도 materials ontology KG가 plain RAG보다 우수하다는 결론은 아직 보류한다.",
+            "text": "새 근거 신호가 있어도 특정 접근이 대안보다 우수하다는 결론은 아직 보류한다.",
             "reason": "비교 benchmark와 반례 검토가 아직 충분하지 않다.",
             "source_refs": [item["citation"] for item in evidence_sources[:5]],
         })
@@ -1423,12 +1435,13 @@ def build_next_questions(
         if item.get("status") == "open"
     ]
     questions = open_actions[:2]
+    focus = thread_focus_label(thread)
     if evidence_sources:
-        questions.append(f"이번 주 새 근거 `{evidence_sources[0]['title']}`가 materials KG/RAG benchmark 설계를 어떻게 바꾸는가?")
+        questions.append(f"이번 주 새 근거 `{evidence_sources[0]['title']}`가 {focus}의 다음 검증 설계를 어떻게 바꾸는가?")
     if prior_notes:
         questions.append("지난 weekly memory note의 결론 중 이번 근거로 수정하거나 폐기해야 할 것은 무엇인가?")
     if not questions:
-        questions.append("materials ontology KG가 plain RAG보다 실제 연구 판단을 더 좋게 만드는 최소 benchmark는 무엇인가?")
+        questions.append(f"{focus}에서 다음 주에 확인해야 할 최소 검증 질문은 무엇인가?")
     return questions[:4]
 
 
@@ -1477,6 +1490,15 @@ def build_run_id(*, thread_id: str, query: str, created_at: str) -> str:
 
 def build_memory_note_id(*, thread_id: str, run_id: str) -> str:
     return _safe_id(f"memory_note_{thread_id}_{run_id}")[:120]
+
+
+def default_query_for_thread(thread_id: str) -> str:
+    return THREAD_DEFAULT_QUERIES.get(thread_id, DEFAULT_QUERY)
+
+
+def thread_focus_label(thread: dict[str, Any]) -> str:
+    topic = str(thread.get("topic") or thread.get("thread_id") or "research thread")
+    return topic.replace("_", " ")
 
 
 def _safe_id(value: str) -> str:

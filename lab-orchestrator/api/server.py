@@ -482,6 +482,54 @@ async def run_research_thread_weekly_loop(thread_id: str, body: Optional[dict] =
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+def _question_loop_request(body: Optional[dict]) -> dict:
+    body = body or {}
+    question = str(body.get("question", "")).strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="question is required")
+    raw_days = body.get("days", 30)
+    raw_scout_limit = body.get("scout_limit", 5)
+    raw_rag_limit = body.get("rag_limit", 5)
+    raw_kg_limit = body.get("kg_limit", 5)
+    try:
+        days = int(raw_days)
+        scout_limit = int(raw_scout_limit)
+        rag_limit = int(raw_rag_limit)
+        kg_limit = int(raw_kg_limit)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="days and source limits must be integers") from None
+    if days < 1 or days > 90:
+        raise HTTPException(status_code=400, detail="days must be between 1 and 90")
+    if min(scout_limit, rag_limit, kg_limit) < 0:
+        raise HTTPException(status_code=400, detail="source limits must be non-negative")
+    return {
+        "question": question,
+        "days": days,
+        "execute": body.get("execute") is True,
+        "use_live_memory": body.get("use_live_memory", True) is True,
+        "use_llm": body.get("use_llm", True) is True,
+        "make_work_package": body.get("make_work_package", True) is True,
+        "scout_limit": scout_limit,
+        "rag_limit": rag_limit,
+        "kg_limit": kg_limit,
+    }
+
+
+@app.post("/research/threads/{thread_id}/questions/run")
+async def run_research_thread_question_loop(thread_id: str, body: dict = Body(...)):
+    """Run or preview the On-demand Research Question Loop v0."""
+    from orchestrator.research_question_loop import preview_or_run_question_loop
+
+    thread_id = _validate_research_thread_id(thread_id)
+    kwargs = _question_loop_request(body)
+    try:
+        return await preview_or_run_question_loop(thread_id=thread_id, **kwargs)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="research_thread not found") from None
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @app.get("/workspaces")
 async def list_workspaces():
     """List available workspaces."""

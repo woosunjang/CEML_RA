@@ -75,8 +75,8 @@ Knowledge accumulation:
 Weekly Useful Research Loop:
 
 - `lab-orchestrator/tools/research_weekly_loop.py` runs the first actually
-  usable weekly loop. v0 is intentionally constrained to
-  `materials_ontology_kg`.
+  usable weekly loop. v0 started with `materials_ontology_kg` and now also
+  supports `rare_earth_magnets` through the same artifact/memory contract.
 - Live-memory acceptance uses the M2 Mac Mini runtime, not the development Mac.
   Start Qdrant and Neo4j from `lab-orchestrator/docker-compose.yml`; keep
   `NEO4J_PASSWORD`, OpenAI keys, and Scout DB paths in local env or `.env`.
@@ -121,6 +121,40 @@ Weekly Useful Research Loop:
 - If Graphiti logs `EquivalentSchemaRuleAlreadyExists` while the final
   healthcheck JSON is `status: "ok"`, treat it as a noisy successful
   initialization rather than a failed bring-up.
+
+On-demand Research Question Loop:
+
+- `lab-orchestrator/tools/research_question_loop.py` runs the first interactive
+  usable research loop. It answers a user question from the same
+  `research_thread`, prior `RA_artifacts` memory notes, Scout, Qdrant/RAG, and
+  Graphiti/KG sources used by weekly loops.
+- `POST /research/threads/{thread_id}/questions/run` previews or runs the same
+  loop. Body fields include `question`, `execute`, `use_live_memory`,
+  `use_llm`, `make_work_package`, and source limits. `execute=true` writes a
+  Korean answer artifact, an on-demand memory note, a question-based work
+  package draft, a `research_thread` update, and by default Graphiti/Qdrant
+  memory writes.
+- LLM synthesis is used by default through `llm.pool.generate_answer`; if the
+  model call fails or is disabled with `use_llm=false`, the loop records
+  `synthesis_mode: fallback` and still writes deterministic artifacts.
+- Question run artifacts are written under
+  `research_question_runs/{thread_id}/`; question-based work package drafts are
+  written under `research_work_package_drafts/{thread_id}/`; reusable memory
+  notes continue to use `research_memory_notes/{thread_id}/`.
+- The current supported thread set is `materials_ontology_kg` and
+  `rare_earth_magnets`. The success criterion is that a later question run in
+  each thread can reuse an earlier on-demand memory note with citation.
+
+M2 manual on-demand sequence:
+
+```bash
+cd /Users/mersoom/Dev/CEML_RA/lab-orchestrator
+export CEML_RA_ARTIFACTS_DIR=/Users/mersoom/Dropbox/Dev/CEML/RA_artifacts
+export SCOUT_DB_PATH=/Users/mersoom/Dev/CEML_RA/lab-paper-scout/data/paper_scout.db
+python tools/research_memory_healthcheck.py --json --deep --thread-id materials_ontology_kg
+python tools/research_question_loop.py --thread-id materials_ontology_kg --question "materials ontology KG에서 다음 실행 패키지는 무엇인가?" --execute
+python tools/research_question_loop.py --thread-id rare_earth_magnets --question "rare earth magnets에서 다음 실행 패키지는 무엇인가?" --execute
+```
 
 Patch review workflow:
 

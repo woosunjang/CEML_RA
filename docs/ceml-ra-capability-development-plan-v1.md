@@ -21,13 +21,13 @@ optional archival worker queue jobs. This creates an actual accumulation path
 from thread memory toward Graphiti without directly mutating live KG/RAG/Slack
 stores.
 
-**Implementation note:** Weekly Useful Research Loop v0 shifts the next product
-center away from additional review surfaces. The first pilot is
-`materials_ontology_kg`: a manual CLI/API weekly run reads `research_thread`,
-RA artifacts, Scout, RAG, and KG memory, writes a Korean weekly brief plus
-reusable memory note, updates the thread, and attempts live Graphiti/Qdrant
-memory writes. Scheduler activation remains deferred until two manual runs
-prove that prior memory is reused.
+**Implementation note:** Weekly Useful Research Loop v0 shifts the product
+center away from additional review surfaces. It started with
+`materials_ontology_kg` and now supports the first two seeded threads through
+the same manual CLI/API contract: read `research_thread`, RA artifacts, Scout,
+RAG, and KG memory; write a Korean weekly brief plus reusable memory note;
+update the thread; and attempt live Graphiti/Qdrant memory writes. Scheduler
+activation remains deferred until manual runs prove that prior memory is reused.
 
 **Implementation note:** M2 Live Memory Bring-up makes the M2 Mac Mini the
 runtime acceptance target for live memory. Graphiti is moved to the canonical
@@ -47,6 +47,13 @@ results from Qdrant/Graphiti are kept in `memory_reuse_sources`, while
 `new_evidence` is reserved for Scout papers, external RAG documents, and fresh
 KG facts. Scout search also falls back from full-query phrase search to
 token-overlap ranking across analyzed papers.
+
+**Implementation note:** On-demand Research Question Loop v0 adds the first
+interactive feature-first loop. A user question now produces a Korean answer
+artifact, reusable memory note, question-based work package draft,
+`research_thread` update, and optional Graphiti/Qdrant live memory writes.
+LLM synthesis is default, but failures produce deterministic fallback artifacts
+instead of blocking the run.
 
 ## Purpose
 
@@ -82,6 +89,7 @@ PhD-level integrated research colleague가 되는 것이다. 자동 모드와 �
 - Weekly Useful Research Loop v0
 - Weekly Brief Quality v1
 - Weekly Loop Evidence Separation v1
+- On-demand Research Question Loop v0
 - M2 live memory healthcheck and bring-up runbook
 
 이 기능들은 연구 기억 spine과 dry-run-first 경계를 만들었지만, 아직 통합 연구

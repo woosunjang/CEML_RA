@@ -1,5 +1,30 @@
 # Task Log
 
+## 2026-07-01 — Implemented feature-first question loop expansion
+
+**Status:** Local regression passed; M2 acceptance pending after branch push/pull.
+
+Added the feature-first expansion target on top of the weekly useful loop:
+
+```text
+lab-orchestrator/orchestrator/research_question_loop.py
+lab-orchestrator/tools/research_question_loop.py
+lab-orchestrator/tests/test_research_question_loop.py
+```
+
+The new On-demand Research Question Loop reads `research_thread`, prior memory
+notes, Scout, Qdrant/RAG, and Graphiti/KG sources, then can write a Korean
+answer artifact, reusable memory note, question-based work package draft,
+`research_thread` patch, and Graphiti/Qdrant memory writes when `execute=true`.
+LLM synthesis is default; model failure or `use_llm=false` records
+`synthesis_mode: fallback` and still writes deterministic artifacts.
+
+Weekly loop v0 now supports both `materials_ontology_kg` and
+`rare_earth_magnets` through thread-specific default queries. Scheduler, Slack,
+runtime service registration, and new review UI remain out of scope.
+
+Do not stage the repo-root untracked `CEML_RA/` directory.
+
 ## 2026-06-14 — Requested residual Codex memory cleanup
 
 **Status:** Cleanup note filed; memory-layer refresh still controls generated

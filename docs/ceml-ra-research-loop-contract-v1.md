@@ -66,7 +66,8 @@ runtime service mutation, scheduler activation은 별도 승인 경계다.
 
 ### Weekly Useful Research Loop
 
-첫 파일럿은 `materials_ontology_kg`에 고정한다.
+첫 파일럿은 `materials_ontology_kg`에서 시작했고, 같은 contract를
+`rare_earth_magnets`까지 확장한다.
 
 한 번의 weekly loop는 다음을 남긴다.
 
@@ -145,22 +146,25 @@ preview를 먼저 만들지 않는다.
 
 ## Near-Term Implementation Direction
 
-다음 구현 방향은 review/gate/surface 확장이 아니라 Weekly Useful Research Loop의
-연구 품질을 높이는 것이다.
+다음 구현 방향은 review/gate/surface 확장이나 요약 품질 polish가 아니라, 실제로
+쓸 수 있는 기능 폭을 먼저 닫는 것이다. 최소 품질 기준은 citation, 기억 재사용,
+fresh evidence와 내부 memory note 분리, artifact 저장, live write 실패 원인 기록이다.
 
-우선순위 후보:
+우선 구현할 기능 slice:
 
-- `materials_ontology_kg` weekly brief가 새 근거, 기존 기억 재사용, 판단 변화,
-  보류할 주장, 다음 질문, 추천 확인 대상을 안정적으로 생성한다;
-- 두 번째 weekly run이 첫 번째 memory note를 `RA_artifacts`, Qdrant, Graphiti 중
-  하나 이상에서 citation과 함께 재사용한다;
-- M2 runbook과 healthcheck가 실제 경로와 noisy-success 조건을 반영한다;
-- scheduler는 수동 2회 run의 품질이 확인된 뒤에만 연결한다.
+- On-demand Research Question Loop: 사용자가 질문을 던지면 같은 `research_thread`,
+  prior memory note, Scout, Qdrant/RAG, Graphiti/KG를 읽고 한국어 답변, reusable
+  memory note, thread patch, live memory write 결과를 남긴다.
+- Question-based Work Package Draft: 질문 답변에서 바로 다음 실행 단위를 만들고
+  `research_work_package_drafts/{thread_id}/`에 durable artifact로 저장한다.
+- Second-thread expansion: `materials_ontology_kg`에서 닫은 contract를
+  `rare_earth_magnets`에도 적용해 두 thread 모두 질문 -> 답변 -> work package ->
+  memory 재사용 흐름을 검증한다.
 
 아직 하지 않을 것:
 
 - weekly scheduler 활성화;
 - Slack command/notification 확장;
-- 두 번째 thread 확장;
 - runtime service/launchd/watchdog 등록;
-- 새 review/approval UI 확장.
+- 새 review/approval UI 확장;
+- selection/summarization 품질만을 위한 별도 polish chunk.

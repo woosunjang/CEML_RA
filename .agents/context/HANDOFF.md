@@ -41,24 +41,33 @@ clean context before feature work.
 
 ## Current Code Boundary
 
-`Weekly Useful Research Loop v0` is the current product-facing path. It is
-constrained to `materials_ontology_kg` and can read `research_thread`, Scout,
-RAG, KG, and prior memory notes, then write a weekly brief, reusable memory
-note, `research_thread` update, and Graphiti/Qdrant memory writes when
-`execute=true`.
+`Weekly Useful Research Loop v0` is the first product-facing path. It now
+supports `materials_ontology_kg` and `rare_earth_magnets`, and can read
+`research_thread`, Scout, RAG, KG, and prior memory notes, then write a weekly
+brief, reusable memory note, `research_thread` update, and Graphiti/Qdrant
+memory writes when `execute=true`.
 
-`Weekly Brief Quality v1` is the current next-step boundary: the brief should
-show new evidence, reused memory, judgment change, weak/deferred claims,
+`Weekly Brief Quality v1` is the existing weekly output contract: the brief
+should show new evidence, reused memory, judgment change, weak/deferred claims,
 next-week questions, recommended checks, and reuse provenance across
-`RA_artifacts`, Qdrant, and Graphiti.
+`RA_artifacts`, Qdrant, and Graphiti. It is not the current next-step boundary.
 
 `Weekly Loop Evidence Separation v1` keeps Qdrant/Graphiti
 `research_memory_note` hits out of `new_evidence`. Internal memory hits belong
 in `memory_reuse_sources`; only Scout papers, external RAG documents, and fresh
 KG facts count as new evidence.
 
-Scheduler, Slack notification, second-thread expansion, and new review UI are
-deferred until two useful manual M2 runs are confirmed.
+`On-demand Research Question Loop v0` is the current feature-first expansion.
+It answers a user question from the same thread/artifact/Scout/RAG/KG memory,
+writes a Korean answer artifact, reusable memory note, question-based work
+package draft, `research_thread` update, and Graphiti/Qdrant memory writes when
+`execute=true`. LLM synthesis is the default; failures fall back to deterministic
+Korean artifacts with `synthesis_mode: fallback`.
+
+Scheduler, Slack notification, runtime service registration, and new review UI
+remain deferred. Do not drift back into selection/summarization-only polish
+until the two-thread question -> answer -> work package -> memory reuse path is
+accepted on M2.
 
 ## Boundaries
 
