@@ -481,7 +481,8 @@ def load_previous_memory_notes(
     if not base.exists():
         return []
     notes: list[dict[str, Any]] = []
-    for path in sorted(base.glob("*.json"), reverse=True):
+    paths = sorted(base.glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    for path in paths:
         try:
             note = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):

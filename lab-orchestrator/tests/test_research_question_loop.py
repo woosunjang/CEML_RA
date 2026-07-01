@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -249,6 +250,18 @@ class ResearchQuestionLoopTests(unittest.TestCase):
             kg_search=lambda query, limit: _kg_search(query, 0),
             created_at="2026-07-01T09:00:00Z",
         ))
+        old_note = artifacts / "research_memory_notes" / "materials_ontology_kg" / "zzzz_old_memory_note.json"
+        old_note.write_text(
+            json.dumps(
+                {
+                    "memory_note_id": "old_lexically_late_memory_note",
+                    "summary": "파일명은 뒤에 오지만 mtime은 오래된 memory note",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        os.utime(old_note, (1, 1))
         second = asyncio.run(preview_or_run_question_loop(
             thread_id="materials_ontology_kg",
             question="두 번째 질문에서 이전 기억을 재사용하라.",
@@ -267,6 +280,7 @@ class ResearchQuestionLoopTests(unittest.TestCase):
         self.assertTrue(second["memory_note"]["memory_reuse_sources"]["rag"])
         self.assertTrue(second["memory_note"]["memory_reuse_sources"]["kg"])
         self.assertEqual(second["source_availability"]["memory_reuse_count"], 2)
+        self.assertEqual(second["memory_note"]["reuse_provenance"][0]["memory_note_id"], first["memory_note_id"])
         self.assertTrue(any(
             item["memory_note_id"] == first["memory_note_id"]
             for item in second["memory_note"]["reuse_provenance"]
