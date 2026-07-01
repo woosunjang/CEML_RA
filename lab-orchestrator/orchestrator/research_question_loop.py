@@ -37,6 +37,7 @@ from orchestrator.research_weekly_loop import (
     collect_thread_memory,
     collect_weekly_sources,
     default_query_for_thread,
+    filter_memory_reuse_sources_for_thread,
     load_previous_memory_notes,
     memory_note_thread_dir,
     render_memory_note_markdown,
@@ -161,6 +162,7 @@ async def preview_or_run_question_loop(
         rag_search=rag_search,
         kg_search=kg_search,
     )
+    source_bundle = filter_memory_reuse_sources_for_thread(source_bundle, thread_id)
     evidence_sources = source_bundle["scout"] + source_bundle["rag"] + source_bundle["kg"]
     citations = build_citations(prior_notes, thread_memory, evidence_sources)
     reuse_provenance = build_reuse_provenance(prior_notes, source_bundle)

@@ -22,7 +22,7 @@ from api.server import app  # noqa: E402
 from integrations.qdrant import memory_note_chunk_id  # noqa: E402
 from orchestrator.research_question_loop import preview_or_run_question_loop  # noqa: E402
 from orchestrator.research_thread import load_research_thread, seed_research_threads  # noqa: E402
-from orchestrator.research_weekly_loop import preview_or_run_weekly_loop  # noqa: E402
+from orchestrator.research_weekly_loop import filter_memory_reuse_sources_for_thread, preview_or_run_weekly_loop  # noqa: E402
 
 
 FIXED_NOW = "2026-07-01T09:00:00Z"
@@ -285,6 +285,44 @@ class ResearchQuestionLoopTests(unittest.TestCase):
             item["memory_note_id"] == first["memory_note_id"]
             for item in second["memory_note"]["reuse_provenance"]
         ))
+
+    def test_cross_thread_memory_reuse_sources_are_filtered(self):
+        bundle = {
+            "scout": [],
+            "rag": [],
+            "kg": [],
+            "memory_reuse_sources": {
+                "rag": [
+                    {
+                        "citation": "rag:materials_memory",
+                        "thread_id": "materials_ontology_kg",
+                        "title": "materials memory note",
+                    },
+                    {
+                        "citation": "rag:rare_memory",
+                        "thread_id": "rare_earth_magnets",
+                        "title": "rare earth memory note",
+                    },
+                ],
+                "kg": [
+                    {
+                        "citation": "kg:materials_memory",
+                        "title": "Weekly research memory note: materials_ontology_kg",
+                    },
+                    {
+                        "citation": "kg:rare_memory",
+                        "artifact_ref": "research_memory_notes/rare_earth_magnets/note.md",
+                    },
+                ],
+            },
+            "raw_sources": {},
+            "errors": [],
+        }
+
+        filtered = filter_memory_reuse_sources_for_thread(bundle, "rare_earth_magnets")
+
+        self.assertEqual([item["citation"] for item in filtered["memory_reuse_sources"]["rag"]], ["rag:rare_memory"])
+        self.assertEqual([item["citation"] for item in filtered["memory_reuse_sources"]["kg"]], ["kg:rare_memory"])
 
     def test_both_seed_threads_support_question_loop_contract(self):
         tmp, artifacts = self._seeded_artifacts()

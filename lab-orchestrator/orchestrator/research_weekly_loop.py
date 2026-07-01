@@ -140,6 +140,7 @@ async def preview_or_run_weekly_loop(
         rag_search=rag_search,
         kg_search=kg_search,
     )
+    source_bundle = filter_memory_reuse_sources_for_thread(source_bundle, thread_id)
     memory_note = build_memory_note(
         thread=thread,
         run_id=run_id,
@@ -804,6 +805,32 @@ def fresh_evidence_missing_reason(source_bundle: dict[str, Any]) -> str:
     return "no_fresh_external_sources_found"
 
 
+def filter_memory_reuse_sources_for_thread(source_bundle: dict[str, Any], thread_id: str) -> dict[str, Any]:
+    """Keep internal memory-note reuse scoped to the active research_thread."""
+    filtered = dict(source_bundle)
+    memory_sources = source_bundle.get("memory_reuse_sources", {}) or {}
+    filtered["memory_reuse_sources"] = {
+        label: [
+            item
+            for item in memory_sources.get(label, []) or []
+            if memory_source_matches_thread(item, thread_id)
+        ]
+        for label in ("rag", "kg")
+    }
+    return filtered
+
+
+def memory_source_matches_thread(source: dict[str, Any], thread_id: str) -> bool:
+    source_thread = str(source.get("thread_id") or "")
+    if source_thread:
+        return source_thread == thread_id
+    haystack = _source_haystack(source)
+    if thread_id.lower() in haystack:
+        return True
+    known_other_threads = set(THREAD_DEFAULT_QUERIES) - {thread_id}
+    return not any(other.lower() in haystack for other in known_other_threads)
+
+
 async def write_live_memory(
     *,
     thread_id: str,
@@ -1114,6 +1141,7 @@ def source_from_rag_result(result: Any, idx: int) -> dict[str, Any]:
         "artifact_ref": str(payload.get("artifact_ref") or ""),
         "document_type": str(payload.get("document_type") or ""),
         "memory_note_id": str(payload.get("memory_note_id") or ""),
+        "thread_id": str(payload.get("thread_id") or ""),
         "payload_source": str(payload.get("source") or ""),
     }
 
@@ -1131,6 +1159,7 @@ def source_from_kg_result(result: dict[str, Any], idx: int) -> dict[str, Any]:
         "score": result.get("score"),
         "artifact_ref": str(result.get("artifact_ref") or ""),
         "document_type": str(result.get("document_type") or ""),
+        "thread_id": str(result.get("thread_id") or ""),
         "episode_name": str(result.get("episode_name") or result.get("name") or ""),
     }
 
